@@ -1,2 +1,2 @@
 # py-comix
-Python scrapper for images and creator of cbz for comic book readers
+Python crawler that downloads images & creates comic book reader compatible files
