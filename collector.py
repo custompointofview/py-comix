@@ -40,11 +40,12 @@ class Collector:
 
     def tear_down_collections(self):
         shutil.rmtree(self.TMP_DIR, ignore_errors=True)
+        print("=" * 75)
 
     def tear_down_collection(self):
-        for name, url in self.sweeper.chapters.items():
-            print("# Cleaning: ", os.path.join(self.collection_path, name))
+        for name, url in tqdm(self.sweeper.chapters.items(), desc='# Cleaning'):
             self.tear_down_chapter(name)
+        print("=" * 75)
 
     def tear_down_chapter(self, name):
         shutil.rmtree(os.path.join(self.collection_path, name), ignore_errors=True)
@@ -53,7 +54,7 @@ class Collector:
         """Collect all chapters and images from chapters
         :return: None
         """
-        self.sweeper.sweep(self.TMP_DIR)
+        self.sweeper.sweep()
         self.collection_path = os.path.join(self.TMP_DIR, self.sweeper.name)
         self.save_collection()
         self.packer.pack_all(self.collection_path)
@@ -70,8 +71,8 @@ class Collector:
                 self.save_chapter(chapter_name, imgs)
             print("=" * 75)
             return
-        # print('# Opted for parallel download. CPU count:',  threading.cpu_count())
-        with ThreadPoolExecutor(max_workers=3) as executor:
+        print('# Opted for parallel download. CPU count:', os.cpu_count())
+        with ThreadPoolExecutor(max_workers=os.cpu_count()) as executor:
             futures = [executor.submit(self.save_chapter, chapter_name, imgs) for chapter_name, imgs in self.sweeper.chapter_imgs.items()]
             for future in as_completed(futures):
                 pass
@@ -83,7 +84,7 @@ class Collector:
         chapter_dir = os.path.join(col_dir, chapter_name)
         os.makedirs(chapter_dir, exist_ok=True)
         # download images
-        for img in tqdm(imgs, desc=chapter_name):
+        for img in tqdm(imgs, desc='# {0}'.format(chapter_name)):
             img_name, img_url = img
             img_path = os.path.join(chapter_dir, img_name)
             # download image

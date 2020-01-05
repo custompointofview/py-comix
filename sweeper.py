@@ -32,17 +32,12 @@ class Sweeper:
         self.chapters = {}
         self.chapter_imgs = {}
 
-    def sweep(self, dest_dir):
+    def sweep(self):
         """Collect all chapters and images from chapters
-        :param dest_dir: <string> Path where all files will be saved
         :return: None
         """
-        # collect chapter urls
         self.sweep_collection()
-        # visit urls and collect images
-        for name, url in self.chapters.items():
-            time.sleep(random.uniform(0, 0.5))
-            self.sweep_chapter(url, name)
+        self.sweep_chapters()
 
     def sweep_collection(self) -> None:
         print("=" * 75)
@@ -66,8 +61,17 @@ class Sweeper:
                     self.chapters[chapter_name] = chapter_url
         print("=" * 75)
 
+    def sweep_chapters(self):
+        print('## Chapters info: ')
+        # visit urls and collect img urls
+        for name, url in tqdm(self.chapters.items(), desc='# Collecting'):
+            time.sleep(random.uniform(0, 0.5))
+            self.sweep_chapter(url, name)
+        # print chapter info
+        for chapter, imgs in self.chapter_imgs.items():
+            print('# {0}: {1} pages'.format(chapter, len(imgs)))
+
     def sweep_chapter(self, url, chapter_name) -> None:
-        print('# Gathering chapter: ', chapter_name)
         # get contents from html
         respose = req.get(url)
         html_soup = bsoup(respose.text, 'html.parser')
@@ -77,7 +81,6 @@ class Sweeper:
             img_url = str(img_tag['data-src']).strip()
             m = re.search('(?:.(?!/))+$', img_url)
             img_name = m.group(0)[1:]
-
             if chapter_name not in self.chapter_imgs:
                 self.chapter_imgs[chapter_name] = []
             img_elem = (img_name, img_url)

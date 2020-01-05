@@ -5,6 +5,8 @@ import os
 import sys
 import zipfile
 
+from tqdm import tqdm
+
 
 class Packer:
     """
@@ -27,13 +29,11 @@ class Packer:
 
     def pack_all(self, source_dir):
         """Walks in directory and archives all"""
-        for (dirpath, dirnames, filenames) in os.walk(source_dir):
-            for d in dirnames:
-                imgs_path = os.path.join(dirpath, d)
-                archive_path = os.path.join(dirpath, d + ".cbz")
-                print("=" * 75)
-                print("## Archiving: ", imgs_path)
-                self.pack(imgs_path, archive_path)
+        print("=" * 75)
+        for dirname in tqdm(os.listdir(source_dir), desc='# Archiving'):
+            imgs_path = os.path.join(source_dir, dirname)
+            archive_path = os.path.join(source_dir, dirname + ".cbz")
+            self.pack(imgs_path, archive_path)
         print("=" * 75)
 
     def pack(self, imgs_path, archive_path):

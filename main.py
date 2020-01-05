@@ -43,7 +43,6 @@ if __name__ == "__main__":
                         help="verbose execution",
                         dest="verbose", action="store_true")
     a = parser.parse_args()
-    print(a)
     if not validator(a):
         print("= ERROR: URL is not valid. Please provide a valid URL. Exiting...")
         sys.exit(1)
