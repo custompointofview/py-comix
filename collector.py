@@ -2,15 +2,17 @@
 # -*- coding: utf-8 -*-
 
 import os
-import re
 import shutil
 import time
 import random
-
 import requests as req
 
 from tqdm import tqdm
-from bs4 import BeautifulSoup as bsoup
+
+from concurrent.futures import ThreadPoolExecutor, as_completed
+
+import archive
+import sweeper
 
 
 class Collector:
@@ -21,96 +23,73 @@ class Collector:
 
     TMP_DIR = 'collections'
 
-    def __init__(self, main_url, dry_run):
+    def __init__(self, url, dry_run, clean, parallel):
         """Initialize the Collector object
-        :param main_url: <str> The URL from which to collect chapters and other info
+        :param url: <str> The URL from which to collect chapters and other info
         :param dry_run: <bool> Will only print and not download
         :return: None
         """
         super().__init__()
-        self.main_url = main_url
+        self.url = url
         self.dry_run = dry_run
-        self.name = None
-        self.chapters = {}
-        # create temp dir where to download files
-        if not self.dry_run:
-            try:
-                os.mkdir(self.TMP_DIR)
-            except FileExistsError:
-                pass
+        self.clean = clean
+        self.parallel = parallel
+        self.sweeper = sweeper.Sweeper(main_url=self.url, dry_run=self.dry_run)
+        self.packer = archive.Packer()
+        self.collection_path = self.TMP_DIR
 
-    def tear_down_collection(self):
+    def tear_down_collections(self):
         shutil.rmtree(self.TMP_DIR, ignore_errors=True)
 
-    def tear_down_chapters(self):
-        for name, url in self.chapters.items():
+    def tear_down_collection(self):
+        for name, url in self.sweeper.chapters.items():
+            print("# Cleaning: ", os.path.join(self.collection_path, name))
             self.tear_down_chapter(name)
 
     def tear_down_chapter(self, name):
-        shutil.rmtree(os.path.join(self.TMP_DIR, name), ignore_errors=True)
+        shutil.rmtree(os.path.join(self.collection_path, name), ignore_errors=True)
 
     def collect(self):
         """Collect all chapters and images from chapters
         :return: None
         """
+        self.sweeper.sweep(self.TMP_DIR)
+        self.collection_path = os.path.join(self.TMP_DIR, self.sweeper.name)
+        self.save_collection()
+        self.packer.pack_all(self.collection_path)
+        if self.clean:
+            self.tear_down_collection()
 
-        # collect chapter urls
-        self.collect_collection()
-        # visit urls and collect images
-        for name, url in self.chapters.items():
-            chapter_dir = os.path.join(self.TMP_DIR, name)
-            if not self.dry_run:
-                try:
-                    os.mkdir(chapter_dir)
-                except FileExistsError:
-                    pass
-            self.collect_chapter(url, chapter_dir, name)
-
-    def collect_collection(self) -> None:
+    def save_collection(self):
+        print("=" * 75)
+        print("# Downloading chapters...")
+        # create collection dir
+        os.makedirs(self.collection_path, exist_ok=True)
+        if not self.parallel:
+            for chapter_name, imgs in self.sweeper.chapter_imgs.items():
+                self.save_chapter(chapter_name, imgs)
+            print("=" * 75)
+            return
+        # print('# Opted for parallel download. CPU count:',  threading.cpu_count())
+        with ThreadPoolExecutor(max_workers=3) as executor:
+            futures = [executor.submit(self.save_chapter, chapter_name, imgs) for chapter_name, imgs in self.sweeper.chapter_imgs.items()]
+            for future in as_completed(futures):
+                pass
         print("=" * 75)
 
-        response = req.get(self.main_url)
-        html_soup = bsoup(response.text, 'html.parser')
-
-        print("## Finding collection name ...")
-        name = html_soup.find('h2', class_='listmanga-header')
-        self.name = str(name.contents[0]).strip()
-        print('# Name:', self.name)
-
-        print("## Finding chapters ...")
-        chapters = html_soup.find('ul', class_='chapters')
-        for chapter in chapters.findChildren():
-            if chapter.a:
-                chapter_url = chapter.a['href']
-                chapter_name = chapter.a.contents[0]
-                if chapter_name not in self.chapters:
-                    print("# Chapter: ", chapter_name, " - ", chapter_url)
-                    self.chapters[chapter_name] = chapter_url
-        print("=" * 75)
-
-    def collect_chapter(self, url, save_path, chapter_name) -> None:
-        # sleep because we thread this
-        time.sleep(2)
-        # get contents from html
-        respose = req.get(url)
-        html_soup = bsoup(respose.text, 'html.parser')
-        img_tags = html_soup.find('div', id='all')
-        img_list = list(img_tags.findChildren())
-        for img_tag in tqdm(img_list, desc=chapter_name):
+    def save_chapter(self, chapter_name, imgs):
+        # create dirs for imgs
+        col_dir = os.path.join(self.TMP_DIR, self.sweeper.name)
+        chapter_dir = os.path.join(col_dir, chapter_name)
+        os.makedirs(chapter_dir, exist_ok=True)
+        # download images
+        for img in tqdm(imgs, desc=chapter_name):
+            img_name, img_url = img
+            img_path = os.path.join(chapter_dir, img_name)
+            # download image
             # sleep randomly so that we mask network behaviour
             time.sleep(random.uniform(0, 0.5))
-            # get img url & strip
-            if self.dry_run:
-                # print("# Image: ", img_url)
-                continue
-            # download image
-            img_url = str(img_tag['data-src']).strip()
             r = req.get(img_url, stream=True)
-            # get img name
-            m = re.search('(?:.(?!/))+$', img_url)
-            img_name = m.group(0)[1:]
-            img_path = os.path.join(save_path, img_name)
-            # download image
             if r.status_code == 200:
                 with open(img_path, 'wb') as f:
                     for chunk in r.iter_content(1024):

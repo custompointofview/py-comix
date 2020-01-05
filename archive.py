@@ -10,17 +10,12 @@ class Packer:
     """
     Packer has the ability of sweeping a given directory and create cbz archives based on contents
     """
-    def __init__(self, source_dir):
+
+    def __init__(self):
         """Initialize the Packer object
-        :param source_dir: <str> Archives directory where all the directories are found
         :return: None
         """
         super().__init__()
-        if not os.path.isdir(source_dir):
-            sys.stderr.write("The directory does not exist! Exiting")
-            sys.exit(1)
-        self.source_dir = source_dir
-        self.formats = ["png", "jpg", "jpeg"]
 
     def files(self, source_dir):
         """Returns all files in the path. We already know there should be only images there.
@@ -28,12 +23,11 @@ class Packer:
         :return: None
         """
         for file_name in os.listdir(source_dir):
-
             yield os.path.join(source_dir, file_name)
 
-    def pack_all(self):
+    def pack_all(self, source_dir):
         """Walks in directory and archives all"""
-        for (dirpath, dirnames, filenames) in os.walk(self.source_dir):
+        for (dirpath, dirnames, filenames) in os.walk(source_dir):
             for d in dirnames:
                 imgs_path = os.path.join(dirpath, d)
                 archive_path = os.path.join(dirpath, d + ".cbz")

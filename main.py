@@ -5,25 +5,6 @@ import re
 import sys
 
 import collector
-import archive
-
-
-def threaded_factory(url, dry):
-    pass
-
-
-def single_factory(url, dry):
-    c = collector.Collector(main_url=url, dry_run=dry)
-    c.collect()
-    p = archive.Packer('archives')
-    p.pack_all()
-
-
-def main(args):
-    if args.parallel:
-        threaded_factory(url=args.url, dry=args.dry)
-        return
-    single_factory(url=args.url, dry=args.dry)
 
 
 def validator(args):
@@ -34,8 +15,12 @@ def validator(args):
         r'\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3})'  # ...or ip
         r'(?::\d+)?'  # optional port
         r'(?:/?|[/?]\S+)$', re.IGNORECASE)
-
     return re.match(regex, args.url) is not None
+
+
+def main(args):
+    c = collector.Collector(url=args.url, dry_run=args.dry, clean=args.clean, parallel=args.parallel)
+    c.collect()
 
 
 if __name__ == "__main__":
