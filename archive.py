@@ -31,6 +31,8 @@ class Packer:
         """Walks in directory and archives all"""
         print("=" * 75)
         for dirname in tqdm(os.listdir(source_dir), desc='# Archiving'):
+            if '.' in dirname:
+                continue
             imgs_path = os.path.join(source_dir, dirname)
             archive_path = os.path.join(source_dir, dirname + ".cbz")
             self.pack(imgs_path, archive_path)

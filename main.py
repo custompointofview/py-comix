@@ -1,6 +1,7 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 import argparse
+import json
 import re
 import sys
 
@@ -8,6 +9,8 @@ import collector
 
 
 def validator(args):
+    if not args.url:
+        return True
     regex = re.compile(
         r'^(?:http|ftp)s?://'  # http:// or https://
         r'(?:(?:[A-Z0-9](?:[A-Z0-9-]{0,61}[A-Z0-9])?\.)+(?:[A-Z]{2,6}\.?|[A-Z0-9-]{2,}\.?)|'  # domain...
@@ -19,16 +22,25 @@ def validator(args):
 
 
 def main(args):
-    c = collector.Collector(url=args.url, dry_run=args.dry, clean=args.clean, parallel=args.parallel)
-    c.collect()
+    with open(args.json) as json_file:
+        data = json.load(json_file)
+        c = collector.Collector(options=data,
+                                dry_run=args.dry,
+                                clean=args.clean,
+                                parallel=args.parallel)
+        c.collect()
 
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Creates a comic reader compatible file from a given URL")
-    parser.add_argument('url',
+    parser.add_argument('-u', '--url',
                         type=str,
                         metavar="url",
                         help="URL to scrape chapters from")
+    parser.add_argument('-j', '--json',
+                        type=str,
+                        metavar="json",
+                        help="Path config json")
     parser.add_argument('-c', '--clean',
                         help="keep only .cbz files",
                         dest='clean', action="store_true")

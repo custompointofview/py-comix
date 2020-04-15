@@ -14,6 +14,9 @@ from concurrent.futures import ThreadPoolExecutor, as_completed
 import archive
 import sweeper
 
+VARIANT_RU = 'ru'
+VARIANT_TO = 'to'
+
 
 class Collector:
     """
@@ -23,20 +26,21 @@ class Collector:
 
     TMP_DIR = 'collections'
 
-    def __init__(self, url, dry_run, clean, parallel):
+    def __init__(self, options, dry_run, clean, parallel):
         """Initialize the Collector object
         :param url: <str> The URL from which to collect chapters and other info
         :param dry_run: <bool> Will only print and not download
         :return: None
         """
         super().__init__()
-        self.url = url
         self.dry_run = dry_run
         self.clean = clean
         self.parallel = parallel
-        self.sweeper = sweeper.Sweeper(main_url=self.url, dry_run=self.dry_run)
+        self.options = options
         self.packer = archive.Packer()
         self.collection_path = self.TMP_DIR
+
+        self.sweeper = None
 
     def tear_down_collections(self):
         shutil.rmtree(self.TMP_DIR, ignore_errors=True)
@@ -54,12 +58,27 @@ class Collector:
         """Collect all chapters and images from chapters
         :return: None
         """
-        self.sweeper.sweep()
-        self.collection_path = os.path.join(self.TMP_DIR, self.sweeper.name)
-        self.save_collection()
-        self.packer.pack_all(self.collection_path)
-        if self.clean:
-            self.tear_down_collection()
+        rus = self.options['ru']
+        self._collect(rus, VARIANT_RU)
+        tos = self.options['to']
+        self._collect(tos, VARIANT_TO)
+
+    def _collect(self, options, variant):
+        for url in options['new']:
+            if variant == VARIANT_RU:
+                self.sweeper = sweeper.SweeperRU(main_url=url,
+                                                 dry_run=self.dry_run,
+                                                 filters=options['filter'])
+            elif variant == VARIANT_TO:
+                self.sweeper = sweeper.SweeperTO(main_url=url,
+                                                 dry_run=self.dry_run,
+                                                 filters=options['filter'])
+            self.sweeper.sweep()
+            self.collection_path = os.path.join(self.TMP_DIR, self.sweeper.name)
+            self.save_collection()
+            self.packer.pack_all(self.collection_path)
+            if self.clean:
+                self.tear_down_collection()
 
     def save_collection(self):
         print("=" * 75)
@@ -73,7 +92,8 @@ class Collector:
             return
         print('# Opted for parallel download. CPU count:', os.cpu_count())
         with ThreadPoolExecutor(max_workers=os.cpu_count()) as executor:
-            futures = [executor.submit(self.save_chapter, chapter_name, imgs) for chapter_name, imgs in self.sweeper.chapter_imgs.items()]
+            futures = [executor.submit(self.save_chapter, chapter_name, imgs) for chapter_name, imgs in
+                       self.sweeper.chapter_imgs.items()]
             for future in as_completed(futures):
                 pass
         print("=" * 75)
@@ -87,6 +107,8 @@ class Collector:
         for img in tqdm(imgs, desc='# {0}'.format(chapter_name)):
             img_name, img_url = img
             img_path = os.path.join(chapter_dir, img_name)
+            if os.path.exists(img_path):
+                continue
             # download image
             # sleep randomly so that we mask network behaviour
             time.sleep(random.uniform(0, 0.5))
