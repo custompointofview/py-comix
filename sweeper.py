@@ -2,6 +2,7 @@
 # -*- coding: utf-8 -*-
 
 import re
+import sys
 import time
 import random
 
@@ -9,9 +10,13 @@ import requests as req
 
 from tqdm import tqdm
 from bs4 import BeautifulSoup as bsoup
-
-import cfscrape
 from urllib.parse import urlparse
+
+# Commenting out cfsrape as it doesn't work anymore. Trying different approach with - cloudscraper
+# import cfscrape
+import cloudscraper
+
+import helpers
 
 
 class Sweeper:
@@ -42,7 +47,13 @@ class Sweeper:
                     filtered_out.append(chapter)
         for out in filtered_out:
             del self.chapters[out]
-        print('# Chapters were filtered out.')
+        print('# Chapters were filtered out. Remaining:', self.chapters)
+
+    def announce(self):
+        print()
+        print("=" * 75)
+        print("# Going for URL: ", self.main_url)
+        print("=" * 75)
 
 
 class SweeperRU(Sweeper):
@@ -64,7 +75,6 @@ class SweeperRU(Sweeper):
         :return: None
         """
         self.sweep_collection()
-        # self.sweep_chapters()
 
     def sweep_collection(self) -> None:
         print("=" * 75)
@@ -94,7 +104,7 @@ class SweeperRU(Sweeper):
         print('# Chapters info: ')
         # visit urls and collect img urls
         for name, url in tqdm(self.chapters.items(), desc='## Collecting'):
-            time.sleep(random.uniform(0, 5))
+            time.sleep(random.uniform(1, 5))
             self.sweep_chapter(url, name)
         # print chapter info
         for chapter, imgs in self.chapter_imgs.items():
@@ -114,6 +124,7 @@ class SweeperRU(Sweeper):
                 self.chapter_imgs[chapter_name] = []
             img_elem = (img_name, img_url)
             self.chapter_imgs[chapter_name].append(img_elem)
+    try_sweep_chapter = sweep_chapter
 
 
 class SweeperTO(Sweeper):
@@ -121,6 +132,8 @@ class SweeperTO(Sweeper):
     Sweeper can collect chapters, scrape chapter URL and get images
     All will be archived in a temp dir named: archives
     """
+
+    RETRY = 50
 
     def __init__(self, main_url, dry_run, filters):
         """Initialize the Collector object
@@ -132,27 +145,56 @@ class SweeperTO(Sweeper):
 
         temp = urlparse(self.main_url)
         self.base_url = str(self.main_url).replace(temp.path, '')
-        self.scraper = cfscrape.create_scraper()
+        self.proxy_helper = helpers.HelperProxy()
+        # LOOK ABOVE TO THE IMPORTS ^
+        # self.scraper = cfscrape.create_scraper()
+        self.scraper = cloudscraper.create_scraper()
 
     def sweep(self):
         """Collect all chapters and images from chapters
         :return: None
         """
+        self.announce()
         self.sweep_collection()
         self.sweep_chapters()
 
     def get_html(self, url):
-        response = self.scraper.get(url)
-        if not response.ok:
-            raise Exception("Book Not Found")
+        response = None
+        for i in range(self.RETRY):
+            proxy = self.proxy_helper.get_proxy()
+            proxies = helpers.PROXY_TEMPLATE.copy()
+            for prot in proxies.keys():
+                proxies[prot] = proxies[prot].format(proxy=proxy)
+
+            print("# Trying out URL:", url)
+            print("# With proxy:", proxies)
+            try:
+                response = self.scraper.get(url, proxies=proxies, timeout=(25, 25))
+            except Exception as e:
+                helpers.print_error(e)
+                continue
+
+            self.proxy_helper.set_current_working_proxy(proxy)
+            break
+
+        if response is not None:
+            if not response.ok:
+                raise Exception("Book Not Found")
+        else:
+            raise ConnectionError("Not able to reach url!")
         return bsoup(response.text, 'html.parser')
 
     def sweep_collection(self) -> None:
-        print("=" * 75)
-        html_soup = self.get_html(self.main_url)
+        for i in range(self.RETRY):
+            html_soup = self.get_html(self.main_url)
+            print("# Finding collection name ...")
+            name = html_soup.find('div', class_='barTitle')
+            if name is None:
+                print("# Information not found. Retrying...")
+                time.sleep(random.uniform(1, 3))
+                continue
+            break
 
-        print("# Finding collection name ...")
-        name = html_soup.find('div', class_='barTitle')
         self.name = str(name.contents[0]).replace('information', '').strip()
         print('## Name:', self.name)
 
@@ -165,19 +207,37 @@ class SweeperTO(Sweeper):
                 if chapter_name not in self.chapters:
                     print("## Chapter: ", chapter_name, " - ", chapter_url)
                     self.chapters[chapter_name] = chapter_url
-        print("=" * 75)
         self.filter_chapters()
+        print("=" * 75)
+
 
     def sweep_chapters(self):
         time.sleep(5)
         print('# Chapters info: ')
         # visit urls and collect img urls
         for name, url in tqdm(self.chapters.items(), desc='## Collecting'):
-            time.sleep(random.uniform(1, 5))
-            self.sweep_chapter(url, name)
+            self.try_sweep_chapter(url, name)
+
         # print chapter info
         for chapter, imgs in self.chapter_imgs.items():
             print('## {0}: {1} pages'.format(chapter, len(imgs)))
+
+    def try_sweep_chapter(self, url, name):
+        for i in range(self.RETRY):
+            try:
+                time.sleep(random.uniform(1, 5))
+                self.sweep_chapter(url, name)
+            except TimeoutError as e:
+                helpers.print_error(e)
+                continue
+            except LookupError as e:
+                helpers.print_error(e)
+                print("# Resetting everything and retrying...")
+                self.scraper.close()
+                self.scraper = cloudscraper.create_scraper()
+                self.proxy_helper.reset_current_working_proxy()
+                continue
+            break
 
     def sweep_chapter(self, url, chapter_name) -> None:
         # get contents from html
@@ -188,16 +248,18 @@ class SweeperTO(Sweeper):
         page_list = None
         for script in js_text:
             try:
-                page_list = regex.findall(script.text)
+                page_list = regex.findall(str(script))
             except IndexError:
                 raise Exception('There is something wrong with page Javascript! Probably a wild Captcha appeared...')
             if len(page_list) > 0:
                 break
         if len(page_list) == 0:
-            print('-'*75)
-            print(html_soup)
-            print('-'*75)
-            raise Exception('Nothing was found! Probably a wild Captcha appeared...')
+            # print('-' * 75 + 'JAVASCRIPT FINDINGS')
+            # print(js_text)
+            # print('-' * 75 + 'HTML RESULT')
+            # print(html_soup)
+            # print('-' * 75)
+            raise LookupError('Nothing was found! Probably a wild Captcha appeared...')
 
         for i, page in enumerate(page_list):
             if chapter_name not in self.chapter_imgs:

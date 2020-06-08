@@ -2,7 +2,6 @@
 # -*- coding: utf-8 -*-
 
 import os
-import sys
 import zipfile
 
 from tqdm import tqdm
@@ -30,6 +29,8 @@ class Packer:
     def pack_all(self, source_dir):
         """Walks in directory and archives all"""
         print("=" * 75)
+        if not os.path.exists(str(source_dir)):
+            return
         for dirname in tqdm(os.listdir(source_dir), desc='# Archiving'):
             if '.' in dirname:
                 continue

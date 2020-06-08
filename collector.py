@@ -63,6 +63,33 @@ class Collector:
         tos = self.options['to']
         self._collect(tos, VARIANT_TO)
 
+    def collect_singles(self):
+        rus = self.options['ru']
+        self._collect_singles(rus, VARIANT_RU)
+        tos = self.options['to']
+        self._collect_singles(tos, VARIANT_TO)
+
+    def _collect_singles(self, options, variant):
+        for url in options['new']:
+            if variant == VARIANT_RU:
+                self.sweeper = sweeper.SweeperRU(main_url=url,
+                                                 dry_run=self.dry_run,
+                                                 filters=options['filter'])
+            elif variant == VARIANT_TO:
+                self.sweeper = sweeper.SweeperTO(main_url=url,
+                                                 dry_run=self.dry_run,
+                                                 filters=options['filter'])
+            self.sweeper.announce()
+            self.sweeper.sweep_collection()
+            self.collection_path = os.path.join(self.TMP_DIR, self.sweeper.name)
+            for chname, churl in tqdm(self.sweeper.chapters.items(), desc='## Collecting'):
+                self.sweeper.try_sweep_chapter(churl, chname)
+                imgs = self.sweeper.chapter_imgs[chname]
+                self.save_chapter(chname, imgs)
+            self.packer.pack_all(self.collection_path)
+            if self.clean:
+                self.tear_down_collection()
+
     def _collect(self, options, variant):
         for url in options['new']:
             if variant == VARIANT_RU:

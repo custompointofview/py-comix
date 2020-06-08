@@ -21,14 +21,22 @@ def validator(args):
     return re.match(regex, args.url) is not None
 
 
-def main(args):
+def main(parser):
+    args = parser.parse_args()
+    if not validator(args):
+        print("= ERROR: URL is not valid. Please provide a valid URL. Exiting...")
+        sys.exit(1)
+    if args.json is None:
+        parser.print_help()
+        return
     with open(args.json) as json_file:
         data = json.load(json_file)
         c = collector.Collector(options=data,
                                 dry_run=args.dry,
                                 clean=args.clean,
                                 parallel=args.parallel)
-        c.collect()
+        # c.collect()
+        c.collect_singles()
 
 
 if __name__ == "__main__":
@@ -54,8 +62,4 @@ if __name__ == "__main__":
     parser.add_argument('-v', '--verbose',
                         help="verbose execution",
                         dest="verbose", action="store_true")
-    a = parser.parse_args()
-    if not validator(a):
-        print("= ERROR: URL is not valid. Please provide a valid URL. Exiting...")
-        sys.exit(1)
-    main(a)
+    main(parser)
