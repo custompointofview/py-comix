@@ -41,12 +41,17 @@ class Sweeper:
 
     def filter_chapters(self):
         filtered_out = []
-        for fil in self.filters:
-            for chapter, url in self.chapters.items():
-                if str(fil).lower() not in str(chapter).lower():
-                    filtered_out.append(chapter)
+        for chapter, url in self.chapters.items():
+            vote_out = True
+            for fil in self.filters:
+                if str(fil).lower() in str(chapter).lower():
+                    vote_out = False
+                    break
+            if vote_out:
+                filtered_out.append(chapter)
         for out in filtered_out:
-            del self.chapters[out]
+            if out in self.chapters:
+                del self.chapters[out]
         print('# Chapters were filtered out. Remaining:', self.chapters)
 
     def announce(self):
@@ -166,8 +171,8 @@ class SweeperTO(Sweeper):
             for prot in proxies.keys():
                 proxies[prot] = proxies[prot].format(proxy=proxy)
 
-            print("# Trying out URL:", url)
-            print("# With proxy:", proxies)
+            print("### Trying out URL:", url)
+            print("### With proxy:", proxies)
             try:
                 response = self.scraper.get(url, proxies=proxies, timeout=(25, 25))
             except Exception as e:
@@ -185,6 +190,7 @@ class SweeperTO(Sweeper):
         return bsoup(response.text, 'html.parser')
 
     def sweep_collection(self) -> None:
+        timeout = self.RETRY / 5
         for i in range(self.RETRY):
             html_soup = self.get_html(self.main_url)
             print("# Finding collection name ...")
@@ -192,8 +198,15 @@ class SweeperTO(Sweeper):
             if name is None:
                 print("# Information not found. Retrying...")
                 time.sleep(random.uniform(1, 3))
+                if i % timeout == 0:
+                    self.clean_scraper()
                 continue
             break
+
+        if name is None:
+            # if name is still not found, retry
+            self.clean_scraper()
+            self.sweep_collection()
 
         self.name = str(name.contents[0]).replace('information', '').strip()
         print('## Name:', self.name)
@@ -233,11 +246,15 @@ class SweeperTO(Sweeper):
             except LookupError as e:
                 helpers.print_error(e)
                 print("# Resetting everything and retrying...")
-                self.scraper.close()
-                self.scraper = cloudscraper.create_scraper()
-                self.proxy_helper.reset_current_working_proxy()
+                self.clean_scraper()
                 continue
             break
+
+    def clean_scraper(self):
+        print("### Something went wrong. Cleaning scraper...")
+        self.scraper.close()
+        self.scraper = cloudscraper.create_scraper()
+        self.proxy_helper.reset_current_working_proxy()
 
     def sweep_chapter(self, url, chapter_name) -> None:
         # get contents from html

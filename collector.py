@@ -83,6 +83,7 @@ class Collector:
             self.sweeper.sweep_collection()
             self.collection_path = os.path.join(self.TMP_DIR, self.sweeper.name)
             for chname, churl in tqdm(self.sweeper.chapters.items(), desc='## Collecting'):
+                print("### Collecting: ", chname)
                 self.sweeper.try_sweep_chapter(churl, chname)
                 imgs = self.sweeper.chapter_imgs[chname]
                 self.save_chapter(chname, imgs)
@@ -109,7 +110,7 @@ class Collector:
 
     def save_collection(self):
         print("=" * 75)
-        print("# Downloading chapters...")
+        print("## Downloading chapters...")
         # create collection dir
         os.makedirs(self.collection_path, exist_ok=True)
         if not self.parallel:
@@ -117,7 +118,7 @@ class Collector:
                 self.save_chapter(chapter_name, imgs)
             print("=" * 75)
             return
-        print('# Opted for parallel download. CPU count:', os.cpu_count())
+        print('## Opted for parallel download. CPU count:', os.cpu_count())
         with ThreadPoolExecutor(max_workers=os.cpu_count()) as executor:
             futures = [executor.submit(self.save_chapter, chapter_name, imgs) for chapter_name, imgs in
                        self.sweeper.chapter_imgs.items()]
@@ -131,7 +132,7 @@ class Collector:
         chapter_dir = os.path.join(col_dir, chapter_name)
         os.makedirs(chapter_dir, exist_ok=True)
         # download images
-        for img in tqdm(imgs, desc='# {0}'.format(chapter_name)):
+        for img in tqdm(imgs, desc='### {0}'.format(chapter_name)):
             img_name, img_url = img
             img_path = os.path.join(chapter_dir, img_name)
             if os.path.exists(img_path):
