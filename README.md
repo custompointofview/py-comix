@@ -1,7 +1,45 @@
 # py-comix
-Python crawler that downloads images & creates comic book reader compatible files
+Python crawler that downloads images & creates comic book reader compatible files (.cbz)
+
+## Standard execution
 
 ```shell script
 # standard execution
-python3 main.py -d -p -c https://readcomicsonline.ru/comic/the-magic-order-2018 
+python3 main.py -j /path/to/default.json
+
+# help for command
+usage: main.py [-h] [-u url] [-j json] [-c] [-p] [-d] [-v]
+
+Creates a comic reader compatible file from a given URL
+
+optional arguments:
+  -h, --help            show this help message and exit
+  -u url, --url url     URL to scrape chapters from
+  -j json, --json json  Path config json
+  -c, --clean           keep only .cbz files
+  -p, --parallel        parallel execution
+  -d, --dry-run         only print what you will do
+  -v, --verbose         verbose execution
+```
+
+## Default configuration
+
+```json
+{
+    "ru" : {
+        "new" : [
+            "https://read.comics/path/to/comic/book"
+        ],
+        "rss" : "https://read.comics/feed",
+        "watch" : [],
+        "filter": ["TPB"]
+    },
+    "to" : {
+        "new" : [
+        ],
+        "rss" : "",
+        "watch" : [],
+        "filter": ["Full", "TPB", "Deluxe"]
+    }
+}
 ```
