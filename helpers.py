@@ -39,6 +39,18 @@ PROXIES_ANON_HIGH_FREEPROXYCZ = [
 
 PROXIES_ANON_HIGH_HIDE = [
     # Taken from https://www.hide-my-ip.com/proxylist.shtml
+    "162.159.242.51:80",
+    "162.159.242.85:80",
+    "162.159.242.65:80",
+    "162.159.242.9:80",
+    "162.159.242.181:80",
+    "162.159.242.7:80",
+    "162.159.242.99:80",
+    "162.159.242.79:80",
+    "162.159.242.250:80",
+    "162.159.242.243:80",
+    "162.159.244.202:80",
+    "162.159.242.255:80",
     "176.101.89.226:33470",
     "163.172.189.32:8811",
     "114.5.64.49:8080",
@@ -52,7 +64,7 @@ PROXIES_ANON_HIGH_HIDE = [
 ]
 
 PROXIES_FREE = [
-    # Free proxies from free-proxy-list.net",
+    # Free proxies from https://free-proxy-list.net/",
     # Updated at 2020-06-07 11:52:01 UTC.",
 
     "12.139.101.100:80",
@@ -391,9 +403,28 @@ PROXIES_FREE = [
     "64.235.204.107:8080",
 ]
 
+PROXIES_FREE_NEW = [
+    # Free proxies from https://free-proxy-list.net/",
+    # Updated at 2020-06-07 11:52:01 UTC.",
+
+    "45.236.171.82:999",
+    "42.114.68.44:8080",
+    "18.236.173.172:8888",
+    "119.42.67.101:8213",
+    "101.109.236.48:8213",
+    "114.7.193.213:8080",
+    "139.99.102.114:80",
+    "149.28.159.114:3128",
+    "64.188.3.162:3128",
+    "128.199.214.87:3128",
+    "34.91.135.38:80",
+    "51.158.119.88:8761",
+]
+
 
 class HelperProxy:
-    PROXY_LIST = PROXIES_ANON_HIGH_HIDE + PROXIES_ANON_HIGH_FREEPROXYCZ + PROXIES_ANON_HIGH
+    # PROXY_LIST = PROXIES_ANON_HIGH_HIDE + PROXIES_ANON_HIGH_FREEPROXYCZ + PROXIES_ANON_HIGH
+    PROXY_LIST = PROXIES_FREE_NEW
 
     def __init__(self):
         self.index = -1

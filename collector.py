@@ -26,7 +26,7 @@ class Collector:
 
     TMP_DIR = 'collections'
 
-    def __init__(self, options, dry_run, clean, parallel):
+    def __init__(self, options, dry_run, clean, parallel, use_proxies=True):
         """Initialize the Collector object
         :param url: <str> The URL from which to collect chapters and other info
         :param dry_run: <bool> Will only print and not download
@@ -37,6 +37,7 @@ class Collector:
         self.clean = clean
         self.parallel = parallel
         self.options = options
+        self.use_proxies = use_proxies
         self.packer = archive.Packer()
         self.collection_path = self.TMP_DIR
 
@@ -78,7 +79,8 @@ class Collector:
             elif variant == VARIANT_TO:
                 self.sweeper = sweeper.SweeperTO(main_url=url,
                                                  dry_run=self.dry_run,
-                                                 filters=options['filter'])
+                                                 filters=options['filter'],
+                                                 use_proxies=self.use_proxies)
             self.sweeper.announce()
             self.sweeper.sweep_collection()
             self.collection_path = os.path.join(self.TMP_DIR, self.sweeper.name)
@@ -100,7 +102,8 @@ class Collector:
             elif variant == VARIANT_TO:
                 self.sweeper = sweeper.SweeperTO(main_url=url,
                                                  dry_run=self.dry_run,
-                                                 filters=options['filter'])
+                                                 filters=options['filter'],
+                                                 use_proxies=self.use_proxies)
             self.sweeper.sweep()
             self.collection_path = os.path.join(self.TMP_DIR, self.sweeper.name)
             self.save_collection()

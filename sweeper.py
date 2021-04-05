@@ -140,7 +140,7 @@ class SweeperTO(Sweeper):
 
     RETRY = 50
 
-    def __init__(self, main_url, dry_run, filters):
+    def __init__(self, main_url, dry_run, filters, use_proxies=True):
         """Initialize the Collector object
         :param main_url: <str> The URL from which to collect chapters and other info
         :param dry_run: <bool> Will only print and not download
@@ -151,6 +151,7 @@ class SweeperTO(Sweeper):
         temp = urlparse(self.main_url)
         self.base_url = str(self.main_url).replace(temp.path, '')
         self.proxy_helper = helpers.HelperProxy()
+        self.use_proxies = use_proxies
         # LOOK ABOVE TO THE IMPORTS ^
         # self.scraper = cfscrape.create_scraper()
         self.scraper = cloudscraper.create_scraper()
@@ -172,9 +173,13 @@ class SweeperTO(Sweeper):
                 proxies[prot] = proxies[prot].format(proxy=proxy)
 
             print("### Trying out URL:", url)
-            print("### With proxy:", proxies)
+            if self.use_proxies:
+                print("### With proxy:", proxies)
             try:
-                response = self.scraper.get(url, proxies=proxies, timeout=(25, 25))
+                if self.use_proxies:
+                    response = self.scraper.get(url, proxies=proxies, timeout=(25, 25))
+                else:
+                    response = self.scraper.get(url, timeout=(25, 25))
             except Exception as e:
                 helpers.print_error(e)
                 continue
@@ -190,6 +195,8 @@ class SweeperTO(Sweeper):
         return bsoup(response.text, 'html.parser')
 
     def sweep_collection(self) -> None:
+        name = None
+        html_soup = None
         timeout = self.RETRY / 5
         for i in range(self.RETRY):
             html_soup = self.get_html(self.main_url)
@@ -222,7 +229,6 @@ class SweeperTO(Sweeper):
                     self.chapters[chapter_name] = chapter_url
         self.filter_chapters()
         print("=" * 75)
-
 
     def sweep_chapters(self):
         time.sleep(5)

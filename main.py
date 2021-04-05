@@ -21,8 +21,7 @@ def validator(args):
     return re.match(regex, args.url) is not None
 
 
-def main(parser):
-    args = parser.parse_args()
+def main(args):
     if not validator(args):
         print("= ERROR: URL is not valid. Please provide a valid URL. Exiting...")
         sys.exit(1)
@@ -34,7 +33,8 @@ def main(parser):
         c = collector.Collector(options=data,
                                 dry_run=args.dry,
                                 clean=args.clean,
-                                parallel=args.parallel)
+                                parallel=args.parallel,
+                                use_proxies=args.use_proxies)
         # c.collect()
         c.collect_singles()
 
@@ -62,4 +62,8 @@ if __name__ == "__main__":
     parser.add_argument('-v', '--verbose',
                         help="verbose execution",
                         dest="verbose", action="store_true")
-    main(parser)
+    parser.add_argument('-x', '--no-proxies',
+                        help="disable proxies",
+                        dest="use_proxies", action="store_false")
+    args = parser.parse_args()
+    main(args)
