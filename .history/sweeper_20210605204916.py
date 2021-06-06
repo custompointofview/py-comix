@@ -434,14 +434,29 @@ class SweeperMA(Sweeper):
 
     def sweep_chapter(self, url, chapter_name) -> None:
         # get contents from html
-        # print("## CHAPTER:", chapter_name)
-        # print("## URL:", url)
+        print("## CHAPTER:", chapter_name)
+        print("## URL:", url)
         html_soup = self.get_html(url)
         container = html_soup.find('div', class_='container-chapter-reader')
         all_imgs = container.findChildren("img")
         for i, img in enumerate(all_imgs):
+            print("Img:", img.src)
+
+        # page_list = None
+        # for script in js_text:
+        #     try:
+        #         page_list = regex.findall(str(script))
+        #     except IndexError:
+        #         raise Exception(
+        #             'There is something wrong with page Javascript! Probably a wild Captcha appeared...')
+        #     if len(page_list) > 0:
+        #         break
+        # if len(page_list) == 0:
+        #     raise LookupError(
+        #         'Nothing was found! Probably a wild Captcha appeared...')
+
+        for i, page in enumerate(page_list):
             if chapter_name not in self.chapter_imgs:
                 self.chapter_imgs[chapter_name] = []
-            img_elem = (str(i + 1) + ".jpg", img['src'])
+            img_elem = (str(i + 1) + ".jpg", page)
             self.chapter_imgs[chapter_name].append(img_elem)
-        # print("chapters_imgs:", self.chapter_imgs)

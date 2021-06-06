@@ -35,7 +35,6 @@ def main(args):
                                 dry_run=args.dry,
                                 clean=args.clean,
                                 parallel=args.parallel,
-                                reverse=args.reverse,
                                 use_proxies=args.use_proxies)
         # c.collect()
         c.collect_singles()

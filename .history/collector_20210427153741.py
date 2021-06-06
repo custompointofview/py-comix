@@ -10,16 +10,12 @@ import requests as req
 from tqdm import tqdm
 
 from concurrent.futures import ThreadPoolExecutor, as_completed
-# Commenting out cfsrape as it doesn't work anymore. Trying different approach with - cloudscraper
-# import cfscrape
-import cloudscraper
 
 import archive
 import sweeper
 
 VARIANT_RU = 'ru'
 VARIANT_TO = 'to'
-VARIANT_MA = 'ma'
 
 
 class Collector:
@@ -47,11 +43,6 @@ class Collector:
         self.collection_path = self.TMP_DIR
 
         self.sweeper = None
-        self.session = req.session()
-        if 'referer' in options and options['referer'] != '':
-            print("= Added the referer:", options['referer'])
-            self.session.headers.update({'referer': options['referer']})
-        self.scraper = cloudscraper.create_scraper(sess=self.session)
 
     def tear_down_collections(self):
         shutil.rmtree(self.TMP_DIR, ignore_errors=True)
@@ -65,13 +56,6 @@ class Collector:
     def tear_down_chapter(self, name):
         shutil.rmtree(os.path.join(self.collection_path, name),
                       ignore_errors=True)
-
-    def clean_scraper(self):
-        print("### Something went wrong. Cleaning scraper...")
-        self.session.close()
-        self.scraper.close()
-        self.session = req.session()
-        self.scraper = cloudscraper.create_scraper(sess=self.session)
 
     def collect(self):
         """Collect all chapters and images from chapters
@@ -87,13 +71,8 @@ class Collector:
         self._collect_singles(rus, VARIANT_RU)
         tos = self.options['to']
         self._collect_singles(tos, VARIANT_TO)
-        mas = self.options['manga']
-        self._collect_singles(mas, VARIANT_MA)
 
     def _collect_singles(self, options, variant):
-        if len(options['new']) == 0:
-            print('## No URLs in:', variant)
-            return
         for url in options['new']:
             if variant == VARIANT_RU:
                 self.sweeper = sweeper.SweeperRU(main_url=url,
@@ -104,13 +83,8 @@ class Collector:
                                                  dry_run=self.dry_run,
                                                  filters=options['filter'],
                                                  reverse=self.reverse,
-                                                 use_proxies=self.use_proxies)
-            elif variant == VARIANT_MA:
-                self.sweeper = sweeper.SweeperMA(main_url=url,
-                                                 dry_run=self.dry_run,
-                                                 filters=options['filter'],
-                                                 reverse=self.reverse,
-                                                 use_proxies=self.use_proxies)
+                                                 use_proxies=self.use_proxies,
+                                                 )
             self.sweeper.announce()
             self.sweeper.sweep_collection()
             self.collection_path = os.path.join(
@@ -125,10 +99,6 @@ class Collector:
                 self.tear_down_collection()
 
     def _collect(self, options, variant):
-        if len(options['new']) == 0:
-            print('## No URLs in:', variant)
-            return
-
         for url in options['new']:
             if variant == VARIANT_RU:
                 self.sweeper = sweeper.SweeperRU(main_url=url,
@@ -176,21 +146,11 @@ class Collector:
             img_path = os.path.join(chapter_dir, img_name)
             if os.path.exists(img_path):
                 continue
-            # sleep randomly so that we mask network behaviour & retry
-            ok = False
-            for x in range(0, 10):
-                for i in range(0, 10):
-                    time.sleep(random.uniform(0.5, 3))
-                    # r = req.get(img_url, stream=True)
-                    r = self.scraper.get(img_url, stream=True, timeout=(60, 60))
-                    if r.status_code == 200:
-                        with open(img_path, 'wb') as f:
-                            for chunk in r.iter_content(1024):
-                                f.write(chunk)
-                        ok = True
-                        break
-                if ok:
-                    break
-                else:
-                    print("!!! ERROR downloading IMG: ", img_url)
-                    self.clean_scraper()
+            # download image
+            # sleep randomly so that we mask network behaviour
+            time.sleep(random.uniform(0, 0.5))
+            r = req.get(img_url, stream=True)
+            if r.status_code == 200:
+                with open(img_path, 'wb') as f:
+                    for chunk in r.iter_content(1024):
+                        f.write(chunk)

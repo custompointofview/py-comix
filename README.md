@@ -20,26 +20,39 @@ optional arguments:
   -p, --parallel        parallel execution
   -d, --dry-run         only print what you will do
   -v, --verbose         verbose execution
+  -x, --no-proxies      disable proxies
+  -r, --reverse         reverse chapter execution
 ```
 
 ## Default configuration
 
 ```json
 {
-    "ru" : {
-        "new" : [
-            "https://read.comics/path/to/comic/book"
-        ],
-        "rss" : "https://read.comics/feed",
-        "watch" : [],
-        "filter": ["TPB"]
-    },
-    "to" : {
-        "new" : [
-        ],
-        "rss" : "",
-        "watch" : [],
-        "filter": ["Full", "TPB", "Deluxe"]
-    }
+  "ru": {
+    "new": [],
+    "rss": "",
+    "watch": [],
+    "filter": [
+      "TPB"
+    ]
+  },
+  "to": {
+    "new": [],
+    "rss": "",
+    "watch": [],
+    "filter": [
+      "Issue"
+    ]
+  },
+  "manga": {
+    "new": [
+    ],
+    "rss": "",
+    "watch": [],
+    "filter": [
+      "Chapter"
+    ]
+  },
+  "referer": ""
 }
 ```

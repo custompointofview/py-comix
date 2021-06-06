@@ -1,0 +1,20 @@
+{
+	"ru": {
+		"new": [""],
+		"rss": "",
+		"watch": [],
+		"filter": ["TPB"]
+	},
+	"to": {
+		"new": [],
+		"rss": "",
+		"watch": [],
+		"filter": ["TPB", "Full", "Issue"]
+	},
+	"manga": {
+		"new": ["https://m.manganelo.com/manga-cv117267"],
+		"rss": "",
+		"watch": [],
+		"filter": ["TPB", "Full", "Issue"]
+	}
+}

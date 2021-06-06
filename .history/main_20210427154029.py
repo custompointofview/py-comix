@@ -23,6 +23,7 @@ def validator(args):
 
 
 def main(args):
+    print(args)
     if not validator(args):
         print("= ERROR: URL is not valid. Please provide a valid URL. Exiting...")
         sys.exit(1)

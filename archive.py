@@ -32,9 +32,10 @@ class Packer:
         if not os.path.exists(str(source_dir)):
             return
         for dirname in tqdm(os.listdir(source_dir), desc='# Archiving'):
-            if '.' in dirname:
-                continue
             imgs_path = os.path.join(source_dir, dirname)
+            if dirname == '.' or os.path.isfile(imgs_path):
+                continue
+            print("## Packing:", dirname)
             archive_path = os.path.join(source_dir, dirname + ".cbz")
             self.pack(imgs_path, archive_path)
         print("=" * 75)

@@ -434,8 +434,8 @@ class SweeperMA(Sweeper):
 
     def sweep_chapter(self, url, chapter_name) -> None:
         # get contents from html
-        # print("## CHAPTER:", chapter_name)
-        # print("## URL:", url)
+        print("## CHAPTER:", chapter_name)
+        print("## URL:", url)
         html_soup = self.get_html(url)
         container = html_soup.find('div', class_='container-chapter-reader')
         all_imgs = container.findChildren("img")
@@ -444,4 +444,4 @@ class SweeperMA(Sweeper):
                 self.chapter_imgs[chapter_name] = []
             img_elem = (str(i + 1) + ".jpg", img['src'])
             self.chapter_imgs[chapter_name].append(img_elem)
-        # print("chapters_imgs:", self.chapter_imgs)
+        print("chapters_imgs:", self.chapter_imgs)

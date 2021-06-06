@@ -1,0 +1,14 @@
+{
+  "ru": {
+    "new": ["https://readcomicsonline.ru/comic/middlewest-2018"],
+    "rss": "https://readcomicsonline.ru/feed",
+    "watch": [],
+    "filter": ["TPB"]
+  },
+  "to": {
+    "new": ["https://readcomiconline.li/Comic/Y-The-Last-Man-2002"],
+    "rss": "",
+    "watch": [],
+    "filter": ["TPB", "Full"]
+  }
+}
