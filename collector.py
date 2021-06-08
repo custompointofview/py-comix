@@ -14,12 +14,9 @@ from concurrent.futures import ThreadPoolExecutor, as_completed
 # import cfscrape
 import cloudscraper
 
-import archive
-import sweeper
-
-VARIANT_RU = 'ru'
-VARIANT_TO = 'to'
-VARIANT_MA = 'ma'
+from archive import Packer
+from sweeper import SweeperFactory
+from variant import Variant
 
 
 class Collector:
@@ -43,12 +40,12 @@ class Collector:
         self.options = options
         self.reverse = reverse
         self.use_proxies = use_proxies
-        self.packer = archive.Packer()
+        self.packer = Packer()
         self.collection_path = self.TMP_DIR
 
         self.sweeper = None
         self.session = req.session()
-        if 'referer' in options and options['referer'] != '':
+        if 'referer' in options and options['referer'] != '' and options['referer'] is not None:
             print("= Added the referer:", options['referer'])
             self.session.headers.update({'referer': options['referer']})
         self.scraper = cloudscraper.create_scraper(sess=self.session)
@@ -78,76 +75,46 @@ class Collector:
         :return: None
         """
         rus = self.options['ru']
-        self._collect(rus, VARIANT_RU)
+        self._collect(rus, Variant.RU)
         tos = self.options['to']
-        self._collect(tos, VARIANT_TO)
-
-    def collect_singles(self):
-        rus = self.options['ru']
-        self._collect_singles(rus, VARIANT_RU)
-        tos = self.options['to']
-        self._collect_singles(tos, VARIANT_TO)
+        self._collect(tos, Variant.TO)
         mas = self.options['manga']
-        self._collect_singles(mas, VARIANT_MA)
-
-    def _collect_singles(self, options, variant):
-        if len(options['new']) == 0:
-            print('## No URLs in:', variant)
-            return
-        for url in options['new']:
-            if variant == VARIANT_RU:
-                self.sweeper = sweeper.SweeperRU(main_url=url,
-                                                 dry_run=self.dry_run,
-                                                 filters=options['filter'])
-            elif variant == VARIANT_TO:
-                self.sweeper = sweeper.SweeperTO(main_url=url,
-                                                 dry_run=self.dry_run,
-                                                 filters=options['filter'],
-                                                 reverse=self.reverse,
-                                                 use_proxies=self.use_proxies)
-            elif variant == VARIANT_MA:
-                self.sweeper = sweeper.SweeperMA(main_url=url,
-                                                 dry_run=self.dry_run,
-                                                 filters=options['filter'],
-                                                 reverse=self.reverse,
-                                                 use_proxies=self.use_proxies)
-            self.sweeper.announce()
-            self.sweeper.sweep_collection()
-            self.collection_path = os.path.join(
-                self.TMP_DIR, self.sweeper.name)
-            for chname, churl in tqdm(self.sweeper.chapters.items(), desc='## Collecting'):
-                print("### Collecting: ", chname)
-                self.sweeper.try_sweep_chapter(churl, chname)
-                imgs = self.sweeper.chapter_imgs[chname]
-                self.save_chapter(chname, imgs)
-            self.packer.pack_all(self.collection_path)
-            if self.clean:
-                self.tear_down_collection()
+        self._collect(mas, Variant.MA)
+        grs = self.options['graphite']
+        self._collect(grs, Variant.GR)
 
     def _collect(self, options, variant):
-        if len(options['new']) == 0:
+        """INNER COLLECTOR
+        :return: None
+        """
+        if len(options['urls']) == 0:
             print('## No URLs in:', variant)
             return
+        for url in options['urls']:
+            self.sweeper = SweeperFactory(main_url=url,
+                                          dry_run=self.dry_run,
+                                          filters=options['filter'],
+                                          reverse=self.reverse,
+                                          use_proxies=self.use_proxies).create_sweeper(variant)
+            self.sweeper.announce()
+            self.sweeper.sweep_collection()
+            self.collection_path = self.sweeper.get_name_path(self.TMP_DIR)
+            for ch_name, ch_url in tqdm(self.sweeper.chapters.items(), desc='## Collecting'):
+                print("### Collecting: ", ch_name)
+                self.sweeper.try_sweep_chapter(ch_url, ch_name)
+                self.save_chapter(ch_name, self.sweeper.get_chapter_imgs(ch_name))
 
-        for url in options['new']:
-            if variant == VARIANT_RU:
-                self.sweeper = sweeper.SweeperRU(main_url=url,
-                                                 dry_run=self.dry_run,
-                                                 filters=options['filter'])
-            elif variant == VARIANT_TO:
-                self.sweeper = sweeper.SweeperTO(main_url=url,
-                                                 dry_run=self.dry_run,
-                                                 filters=options['filter'],
-                                                 use_proxies=self.use_proxies)
-            self.sweeper.sweep()
-            self.collection_path = os.path.join(
-                self.TMP_DIR, self.sweeper.name)
-            self.save_collection()
-            self.packer.pack_all(self.collection_path)
-            if self.clean:
-                self.tear_down_collection()
+    def pack(self):
+        self.packer.pack_all(self.collection_path)
+
+    def clean(self):
+        if self.clean:
+            self.tear_down_collection()
 
     def save_collection(self):
+        """Saves all chapters
+        :return: None
+        """
         print("=" * 75)
         print("## Downloading chapters...")
         # create collection dir
@@ -166,6 +133,9 @@ class Collector:
         print("=" * 75)
 
     def save_chapter(self, chapter_name, imgs):
+        """Saves chapter
+        :return: None
+        """
         # create dirs for imgs
         col_dir = os.path.join(self.TMP_DIR, self.sweeper.name)
         chapter_dir = os.path.join(col_dir, chapter_name)
@@ -194,3 +164,7 @@ class Collector:
                 else:
                     print("!!! ERROR downloading IMG: ", img_url)
                     self.clean_scraper()
+
+    def close(self):
+        self.scraper.close()
+        self.sweeper.close()

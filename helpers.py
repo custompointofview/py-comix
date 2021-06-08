@@ -1,4 +1,5 @@
 import random
+import re
 import sys
 
 PROXY_TEMPLATE = {
@@ -459,6 +460,20 @@ class HelperProxy:
 
     def set_current_working_proxy(self, proxy):
         self.current_working = proxy
+
+
+def url_validator(args):
+    if not args.url:
+        return True
+    regex = re.compile(
+        r'^(?:http|ftp)s?://'  # http:// or https://
+        # domain...
+        r'(?:(?:[A-Z0-9](?:[A-Z0-9-]{0,61}[A-Z0-9])?\.)+(?:[A-Z]{2,6}\.?|[A-Z0-9-]{2,}\.?)|'
+        r'localhost|'  # localhost...
+        r'\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3})'  # ...or ip
+        r'(?::\d+)?'  # optional port
+        r'(?:/?|[/?]\S+)$', re.IGNORECASE)
+    return re.match(regex, args.url) is not None
 
 
 def print_error(msg):

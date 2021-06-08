@@ -29,7 +29,7 @@ optional arguments:
 ```json
 {
   "ru": {
-    "new": [],
+    "urls": [],
     "rss": "",
     "watch": [],
     "filter": [
@@ -37,7 +37,7 @@ optional arguments:
     ]
   },
   "to": {
-    "new": [],
+    "urls": [],
     "rss": "",
     "watch": [],
     "filter": [
@@ -45,7 +45,16 @@ optional arguments:
     ]
   },
   "manga": {
-    "new": [
+    "urls": [
+    ],
+    "rss": "",
+    "watch": [],
+    "filter": [
+      "Chapter"
+    ]
+  },
+  "graphite": {
+    "urls": [
     ],
     "rss": "",
     "watch": [],

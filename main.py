@@ -6,39 +6,32 @@ import re
 import sys
 
 import collector
+import helpers
 
 
-def validator(args):
-    if not args.url:
-        return True
-    regex = re.compile(
-        r'^(?:http|ftp)s?://'  # http:// or https://
-        # domain...
-        r'(?:(?:[A-Z0-9](?:[A-Z0-9-]{0,61}[A-Z0-9])?\.)+(?:[A-Z]{2,6}\.?|[A-Z0-9-]{2,}\.?)|'
-        r'localhost|'  # localhost...
-        r'\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3})'  # ...or ip
-        r'(?::\d+)?'  # optional port
-        r'(?:/?|[/?]\S+)$', re.IGNORECASE)
-    return re.match(regex, args.url) is not None
+def collect(args, options):
+    c = collector.Collector(options=options,
+                            dry_run=args.dry,
+                            clean=args.clean,
+                            parallel=args.parallel,
+                            reverse=args.reverse,
+                            use_proxies=args.use_proxies)
+    c.collect()
+    c.pack()
+    c.clean()
+    c.close()
 
 
 def main(args):
-    if not validator(args):
+    if not helpers.url_validator(args):
         print("= ERROR: URL is not valid. Please provide a valid URL. Exiting...")
         sys.exit(1)
     if args.json is None:
         parser.print_help()
         return
     with open(args.json) as json_file:
-        data = json.load(json_file)
-        c = collector.Collector(options=data,
-                                dry_run=args.dry,
-                                clean=args.clean,
-                                parallel=args.parallel,
-                                reverse=args.reverse,
-                                use_proxies=args.use_proxies)
-        # c.collect()
-        c.collect_singles()
+        options = json.load(json_file)
+    collect(args, options)
 
 
 if __name__ == "__main__":
@@ -71,5 +64,4 @@ if __name__ == "__main__":
     parser.add_argument('-x', '--no-proxies',
                         help="disable proxies",
                         dest="use_proxies", action="store_false")
-    args = parser.parse_args()
-    main(args)
+    main(parser.parse_args())
