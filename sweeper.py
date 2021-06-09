@@ -13,6 +13,7 @@ from urllib.parse import urlparse
 
 import cloudscraper
 from selenium import webdriver
+from selenium.webdriver.support.ui import WebDriverWait
 
 import helpers
 from variant import Variant
@@ -473,6 +474,8 @@ class SweeperGR(SweeperFactory):
         self.use_proxies = use_proxies
         options = webdriver.ChromeOptions()
         options.add_argument("--headless")
+        options.add_argument("--incognito")
+        options.add_argument("--disable-extensions")
         self.scraper = webdriver.Chrome(options=options)
 
     def sweep(self):
@@ -567,31 +570,32 @@ class SweeperGR(SweeperFactory):
 
     def sweep_chapter(self, url, chapter_name) -> None:
         # get contents from html
-        # print("## CHAPTER:", chapter_name)
-        # print("## URL:", url)
         html_soup = self.get_html(url)
         container = html_soup.find('div', class_='slides-container ads')
         all_pages = container.findChildren("div", class_="page-container ng-star-inserted")
-        for i, page in tqdm(enumerate(all_pages), desc="### Gathering images"):
+        # scroll controller
+        for i, page in enumerate(tqdm(all_pages, desc="### Gathering images", ascii=True)):
             # move to the page so that the javascript can load target
             element_id = 'page_' + str(i)
-            element = self.scraper.find_element_by_id(element_id)
-            actions = webdriver.ActionChains(self.scraper)
-            actions.move_to_element(element).perform()
+            self._scroll_to_element_by_id(element_id)
+            # start gathering
             new_img = None
             for x in range(100):
-                # wait for load to finish
-                time.sleep(0.5)
                 # get new version after scroll
                 response = self.scraper.execute_script(
                     "return document.getElementById('{0}').innerHTML".format(element_id))
                 new_page = bsoup(response, 'html.parser')
-                # print("NEW PAGE:", new_page)
                 # get image element
                 new_img = new_page.find('img')
                 # print("NEW IMG:", new_img)
                 if new_img is not None:
                     break
+                # re-scroll
+                if x % 10 == 0 and x != 0:
+                    self._scroll_to_element_by_id('page_0')
+                    self._scroll_to_element_by_id(element_id)
+                # wait for load to finish
+                time.sleep(random.uniform(0.5, 1))
 
             img_src = new_img['src'].replace("thumbnail", "image")
             if chapter_name not in self.chapter_imgs:
@@ -599,9 +603,19 @@ class SweeperGR(SweeperFactory):
             img_elem = (str(i + 1) + ".jpg", img_src)
             self.chapter_imgs[chapter_name].append(img_elem)
 
+    def _scroll_to_element_by_id(self, element_id):
+        element = self.scraper.find_element_by_id(element_id)
+        # actions way
+        actions = webdriver.ActionChains(self.scraper)
+        actions.move_to_element(element).perform()
+        # other way
+        # self.scraper.execute_script('arguments[0].scrollIntoView(true);', element)
+        # scroll_position = self.scraper.execute_script('return window.pageYOffset;')
+        time.sleep(2)
+
     def clean_scraper(self):
         print("### Something went wrong. Cleaning scraper...")
         self.scraper.quit()
         options = webdriver.ChromeOptions()
-        # options.add_argument("--headless")
+        options.add_argument("--headless")
         self.scraper = webdriver.Chrome(options=options)

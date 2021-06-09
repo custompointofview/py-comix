@@ -14,7 +14,7 @@ from concurrent.futures import ThreadPoolExecutor, as_completed
 # import cfscrape
 import cloudscraper
 
-from archive import Packer
+from packer import Packer
 from sweeper import SweeperFactory
 from variant import Variant
 
@@ -35,7 +35,7 @@ class Collector:
         """
         super().__init__()
         self.dry_run = dry_run
-        self.clean = clean
+        self.clean_after = clean
         self.parallel = parallel
         self.options = options
         self.reverse = reverse
@@ -108,7 +108,7 @@ class Collector:
         self.packer.pack_all(self.collection_path)
 
     def clean(self):
-        if self.clean:
+        if self.clean_after:
             self.tear_down_collection()
 
     def save_collection(self):
@@ -141,7 +141,7 @@ class Collector:
         chapter_dir = os.path.join(col_dir, chapter_name)
         os.makedirs(chapter_dir, exist_ok=True)
         # download images
-        for img in tqdm(imgs, desc='### {0}'.format(chapter_name)):
+        for img in tqdm(imgs, desc='### {0}'.format(chapter_name), ascii=True):
             img_name, img_url = img
             img_path = os.path.join(chapter_dir, img_name)
             if os.path.exists(img_path):

@@ -4,6 +4,7 @@ import argparse
 import json
 import re
 import sys
+import time
 
 import collector
 import helpers
@@ -16,7 +17,12 @@ def collect(args, options):
                             parallel=args.parallel,
                             reverse=args.reverse,
                             use_proxies=args.use_proxies)
-    c.collect()
+    try:
+        c.collect()
+    except Exception:
+        time.sleep(2)
+        c.clean()
+        c.close()
     c.pack()
     c.clean()
     c.close()

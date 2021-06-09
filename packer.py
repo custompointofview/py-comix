@@ -31,7 +31,7 @@ class Packer:
         print("=" * 75)
         if not os.path.exists(str(source_dir)):
             return
-        for dirname in tqdm(os.listdir(source_dir), desc='# Archiving'):
+        for dirname in tqdm(os.listdir(source_dir), desc='# Archiving', ascii=True):
             imgs_path = os.path.join(source_dir, dirname)
             if dirname == '.' or os.path.isfile(imgs_path):
                 continue
