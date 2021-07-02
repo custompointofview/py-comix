@@ -103,7 +103,8 @@ class SweeperFactory:
             try:
                 if self.use_proxies:
                     print("### With proxy:", proxies)
-                    response = self.scraper.get(url, timeout=(25, 25), proxies=proxies)
+                    response = self.scraper.get(
+                        url, timeout=(25, 25), proxies=proxies)
                 else:
                     response = self.scraper.get(url, timeout=(25, 25))
             except Exception as e:
@@ -127,18 +128,15 @@ class SweeperFactory:
         return self.chapter_imgs[chapter_name]
 
     def sweep_collection(self):
-        raise NotImplemented("You need a concrete instance and not something abstract.")
+        raise NotImplemented(
+            "You need a concrete instance and not something abstract.")
 
     def try_sweep_chapter(self, churl, chname):
-        raise NotImplemented("You need a concrete instance and not something abstract.")
+        raise NotImplemented(
+            "You need a concrete instance and not something abstract.")
 
     def close(self):
         self.scraper.close()
-        self.scraper.quit()
-
-    def __exit__(self, exc_type, exc_val, exc_tb):
-        self.scraper.close()
-        self.scraper.quit()
 
 
 class SweeperRU(SweeperFactory):
@@ -268,7 +266,7 @@ class SweeperTO(SweeperFactory):
         for chapter in chapters.findChildren():
             if chapter.a:
                 chapter_url = self.base_url + \
-                              str(chapter.a['href']).strip() + "&readType=1&quality=hq"
+                    str(chapter.a['href']).strip() + "&readType=1&quality=hq"
                 chapter_name = str(chapter.a.contents[0]).strip()
                 if chapter_name not in self.chapters:
                     print("## Chapter: ", chapter_name, " - ", chapter_url)
@@ -478,6 +476,10 @@ class SweeperGR(SweeperFactory):
         options.add_argument("--disable-extensions")
         self.scraper = webdriver.Chrome(options=options)
 
+    def __exit__(self, exc_type, exc_val, exc_tb):
+        self.scraper.close()
+        self.scraper.quit()
+
     def sweep(self):
         """Collect all chapters and images from chapters
         :return: None
@@ -493,7 +495,8 @@ class SweeperGR(SweeperFactory):
             try:
                 self.scraper.get(url)
                 time.sleep(random.uniform(1, 3))
-                response = self.scraper.execute_script("return document.getElementsByTagName('html')[0].innerHTML")
+                response = self.scraper.execute_script(
+                    "return document.getElementsByTagName('html')[0].innerHTML")
             except Exception as e:
                 helpers.print_error(e)
                 continue
@@ -572,7 +575,8 @@ class SweeperGR(SweeperFactory):
         # get contents from html
         html_soup = self.get_html(url)
         container = html_soup.find('div', class_='slides-container ads')
-        all_pages = container.findChildren("div", class_="page-container ng-star-inserted")
+        all_pages = container.findChildren(
+            "div", class_="page-container ng-star-inserted")
         # scroll controller
         for i, page in enumerate(tqdm(all_pages, desc="### Gathering images", ascii=True)):
             # move to the page so that the javascript can load target
