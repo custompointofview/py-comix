@@ -26,16 +26,28 @@ class Packer:
         for file_name in os.listdir(source_dir):
             yield os.path.join(source_dir, file_name)
 
+    def pack_collections(self, source_dir):
+        print("=" * 75)
+        if not os.path.exists(str(source_dir)):
+            return
+        for collection in os.listdir(source_dir):
+            coll_path = os.path.join(source_dir, collection)
+            if os.path.isfile(coll_path):
+                print("## Skipping:", coll_path)
+                continue
+            print("## Archiving:", coll_path)
+            self.pack_all(coll_path)
+
     def pack_all(self, source_dir):
         """Walks in directory and archives all"""
-        print("=" * 75)
         if not os.path.exists(str(source_dir)):
             return
         for dirname in tqdm(os.listdir(source_dir), desc='# Archiving', ascii=True):
             imgs_path = os.path.join(source_dir, dirname)
             if dirname == '.' or os.path.isfile(imgs_path):
+                print("## Skipping:", imgs_path)
                 continue
-            print("## Packing:", dirname)
+            print("## Packing:", imgs_path)
             archive_path = os.path.join(source_dir, dirname + ".cbz")
             self.pack(imgs_path, archive_path)
         print("=" * 75)
@@ -55,7 +67,8 @@ class Packer:
             try:
                 zfile.write(path, os.path.basename(path), zipfile.ZIP_STORED)
             except Exception:
-                print('! Could not add file {} to add to {}, aborting...'.format(path, archive_path))
+                print('! Could not add file {} to add to {}, aborting...'.format(
+                    path, archive_path))
                 zfile.close()
                 try:
                     os.remove(archive_path)

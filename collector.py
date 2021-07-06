@@ -25,7 +25,7 @@ class Collector:
     All will be archived in a temp dir named: archives
     """
 
-    TMP_DIR = 'collections'
+    TMP_COLLECTIONS_DIR = 'collections'
 
     def __init__(self, options, dry_run, clean, parallel, reverse, use_proxies=True):
         """Initialize the Collector object
@@ -41,27 +41,40 @@ class Collector:
         self.reverse = reverse
         self.use_proxies = use_proxies
         self.packer = Packer()
-        self.collection_path = self.TMP_DIR
-
+        self.collection_path = self.TMP_COLLECTIONS_DIR
         self.sweeper = None
+        self.init_referer()
+
+    def init_referer(self):
         self.session = req.session()
-        if 'referer' in options and options['referer'] != '' and options['referer'] is not None:
-            print("= Added the referer:", options['referer'])
-            self.session.headers.update({'referer': options['referer']})
+        if self.options is not None:
+            if 'referer' in self.options and self.options['referer'] != '' and self.options['referer'] is not None:
+                print("= Added the referer:", self.options['referer'])
+                self.session.headers.update(
+                    {'referer': self.options['referer']})
         self.scraper = cloudscraper.create_scraper(sess=self.session)
 
-    def tear_down_collections(self):
-        shutil.rmtree(self.TMP_DIR, ignore_errors=True)
+    def tear_down_all(self):
+        shutil.rmtree(self.TMP_COLLECTIONS_DIR, ignore_errors=True)
         print("=" * 75)
 
     def tear_down_collection(self):
-        for name, url in tqdm(self.sweeper.chapters.items(), desc='# Cleaning'):
-            self.tear_down_chapter(name)
+        if not os.path.exists(str(self.TMP_COLLECTIONS_DIR)):
+            return
+        for collection in tqdm(os.listdir(self.TMP_COLLECTIONS_DIR), desc='# Cleaning'):
+            coll_path = os.path.join(self.TMP_COLLECTIONS_DIR, collection)
+            if not os.path.isdir(coll_path):
+                continue
+            for chap in os.listdir(coll_path):
+                chapter = os.path.join(coll_path, chap)
+                if os.path.isdir(chapter) and os.path.isfile(os.path.join(chapter, "1.jpg")):
+                    self.tear_down_chapter(chapter)
         print("=" * 75)
 
     def tear_down_chapter(self, name):
-        shutil.rmtree(os.path.join(self.collection_path, name),
-                      ignore_errors=True)
+        abs_path = os.path.abspath(name)
+        print("### Removing: ", abs_path)
+        shutil.rmtree(abs_path)
 
     def clean_scraper(self):
         print("### Something went wrong. Cleaning scraper...")
@@ -98,14 +111,19 @@ class Collector:
                                           use_proxies=self.use_proxies).create_sweeper(variant)
             self.sweeper.announce()
             self.sweeper.sweep_collection()
-            self.collection_path = self.sweeper.get_name_path(self.TMP_DIR)
+            self.collection_path = self.sweeper.get_name_path(
+                self.TMP_COLLECTIONS_DIR)
             for ch_name, ch_url in tqdm(self.sweeper.chapters.items(), desc='## Collecting'):
                 print("### Collecting: ", ch_name)
                 self.sweeper.try_sweep_chapter(ch_url, ch_name)
-                self.save_chapter(ch_name, self.sweeper.get_chapter_imgs(ch_name))
+                self.save_chapter(
+                    ch_name, self.sweeper.get_chapter_imgs(ch_name))
 
     def pack(self):
         self.packer.pack_all(self.collection_path)
+
+    def pack_all(self):
+        self.packer.pack_collections(self.TMP_COLLECTIONS_DIR)
 
     def clean(self):
         if self.clean_after:
@@ -137,7 +155,7 @@ class Collector:
         :return: None
         """
         # create dirs for imgs
-        col_dir = os.path.join(self.TMP_DIR, self.sweeper.name)
+        col_dir = os.path.join(self.TMP_COLLECTIONS_DIR, self.sweeper.name)
         chapter_dir = os.path.join(col_dir, chapter_name)
         os.makedirs(chapter_dir, exist_ok=True)
         # download images
@@ -152,7 +170,8 @@ class Collector:
                 for i in range(0, 10):
                     time.sleep(random.uniform(0.5, 3))
                     # r = req.get(img_url, stream=True)
-                    r = self.scraper.get(img_url, stream=True, timeout=(60, 60))
+                    r = self.scraper.get(
+                        img_url, stream=True, timeout=(60, 60))
                     if r.status_code == 200:
                         with open(img_path, 'wb') as f:
                             for chunk in r.iter_content(1024):
@@ -166,5 +185,7 @@ class Collector:
                     self.clean_scraper()
 
     def close(self):
-        self.scraper.close()
-        self.sweeper.close()
+        if self.scraper is not None:
+            self.scraper.close()
+        if self.sweeper is not None:
+            self.sweeper.close()
