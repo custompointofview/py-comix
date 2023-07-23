@@ -30,27 +30,32 @@ class Packer:
         print("=" * 75)
         if not os.path.exists(str(source_dir)):
             return
-        for collection in os.listdir(source_dir):
+        for collection in tqdm(os.listdir(source_dir), desc="# Archiving", ascii=True):
             coll_path = os.path.join(source_dir, collection)
-            if os.path.isfile(coll_path):
+            if (
+                os.path.isfile(coll_path)
+                or collection == "Archive"
+                or collection.startswith(".")
+            ):
                 print("## Skipping:", coll_path)
                 continue
-            print("## Archiving:", coll_path)
             self.pack_all(coll_path)
+        print("=" * 75)
 
     def pack_all(self, source_dir):
         """Walks in directory and archives all"""
         if not os.path.exists(str(source_dir)):
             return
-        for dirname in tqdm(os.listdir(source_dir), desc='# Archiving', ascii=True):
+        for dirname in tqdm(
+            os.listdir(source_dir), desc=f"## Packing {source_dir}", ascii=True
+        ):
             imgs_path = os.path.join(source_dir, dirname)
-            if dirname == '.' or os.path.isfile(imgs_path):
-                print("## Skipping:", imgs_path)
+            if dirname == "." or os.path.isfile(imgs_path):
+                print("## Skipping file:", imgs_path)
                 continue
             print("## Packing:", imgs_path)
             archive_path = os.path.join(source_dir, dirname + ".cbz")
             self.pack(imgs_path, archive_path)
-        print("=" * 75)
 
     def pack(self, imgs_path, archive_path):
         """Pack all the files in the file lists into the archive.
@@ -59,16 +64,19 @@ class Packer:
         :return: None
         """
         try:
-            zfile = zipfile.ZipFile(archive_path, 'w')
+            zfile = zipfile.ZipFile(archive_path, "w")
         except Exception:
-            print('! Could not create archive: {}'.format(archive_path))
+            print("! Could not create archive: {}".format(archive_path))
             return
         for i, path in enumerate(self.files(imgs_path)):
             try:
                 zfile.write(path, os.path.basename(path), zipfile.ZIP_STORED)
             except Exception:
-                print('! Could not add file {} to add to {}, aborting...'.format(
-                    path, archive_path))
+                print(
+                    "! Could not add file {} to add to {}, aborting...".format(
+                        path, archive_path
+                    )
+                )
                 zfile.close()
                 try:
                     os.remove(archive_path)
