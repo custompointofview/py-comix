@@ -127,6 +127,8 @@ class SweeperInterface:
             if locator:
                 self.page.wait_for_selector(locator, timeout=PAGE_TIMEOUT)
                 self.page.locator(locator).focus()
+
+            print("- Page loaded correctly.")
             return self.page
         except Exception as e:
             print("!!! Exception while getting page:", e)

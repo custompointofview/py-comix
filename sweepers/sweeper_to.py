@@ -106,7 +106,7 @@ class SweeperTO(SweeperInterface):
     def try_sweep_chapter(self, url, name):
         for i in range(self.RETRY):
             try:
-                time.sleep(random.uniform(5, 10))
+                time.sleep(random.uniform(5, 15))
                 self.sweep_chapter(url, name)
             except TimeoutError as e:
                 helpers.print_error(e)
@@ -120,10 +120,10 @@ class SweeperTO(SweeperInterface):
 
     def sweep_chapter(self, url, chapter_name) -> None:
         # get contents from html
-        print("### Switching chapter to:", chapter_name)
+        print("### Switching to chapter:", chapter_name)
         page = self.get_page(url)
 
-        print("### Waiting for page to load...")
+        print("### Waiting for all pages to load...")
         page.locator("#divImage").wait_for(timeout=PAGE_TIMEOUT, state="visible")
         all_imgs = page.locator("#divImage").locator("img").all()
 
