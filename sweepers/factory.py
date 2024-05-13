@@ -1,14 +1,7 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
-import os
-
-from bs4 import BeautifulSoup as bsoup
-
-import helpers
 from variant import Variant
-from sweepers.sweeper_gr import SweeperGR
 from sweepers.sweeper_ma import SweeperMA
-from sweepers.sweeper_ru import SweeperRU
 from sweepers.sweeper_to import SweeperTO
 
 
@@ -38,11 +31,7 @@ class SweeperFactory:
         self.scraper = None
 
     def create_sweeper(self, variant):
-        if variant == Variant.RU:
-            return SweeperRU(
-                main_url=self.main_url, dry_run=self.dry_run, filters=self.filters
-            )
-        elif variant == Variant.TO:
+        if variant == Variant.TO:
             return SweeperTO(
                 main_url=self.main_url,
                 dry_run=self.dry_run,
@@ -52,14 +41,6 @@ class SweeperFactory:
             )
         elif variant == Variant.MA:
             return SweeperMA(
-                main_url=self.main_url,
-                dry_run=self.dry_run,
-                filters=self.filters,
-                reverse=self.reverse,
-                use_proxies=self.use_proxies,
-            )
-        elif variant == Variant.GR:
-            return SweeperGR(
                 main_url=self.main_url,
                 dry_run=self.dry_run,
                 filters=self.filters,

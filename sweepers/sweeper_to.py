@@ -35,11 +35,6 @@ class SweeperTO(SweeperInterface):
         # self.scraper = cfscrape.create_scraper()
         self.scraper = cloudscraper.create_scraper()
 
-    def clean_scraper(self):
-        print("### Something went wrong. Cleaning scraper...")
-        self.scraper.close()
-        self.scraper = cloudscraper.create_scraper()
-        self.proxy_helper.reset_current_working_proxy()
 
     def sweep(self):
         """Collect all chapters and images from chapters
@@ -124,8 +119,9 @@ class SweeperTO(SweeperInterface):
         page = self.get_page(url)
 
         print("### Waiting for all pages to load...")
-        page.locator("#divImage").wait_for(timeout=PAGE_TIMEOUT, state="visible")
-        all_imgs = page.locator("#divImage").locator("img").all()
+        chapter_container = page.locator("#divImage")
+        chapter_container.wait_for(timeout=PAGE_TIMEOUT, state="visible")
+        all_imgs = chapter_container.locator("img").all()
 
         print("### Determined number of pages: ", len(all_imgs))
         for i, img in enumerate(all_imgs):

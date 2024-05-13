@@ -65,7 +65,8 @@ def main(args):
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(
-        description="Creates a comic reader compatible file from a given URL"
+        description="Creates a comic reader compatible file from a given URL",
+        epilog="Run as: python main.py -v -c -j default_config.json"
     )
     parser.add_argument(
         "-a",

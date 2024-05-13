@@ -1,4 +1,5 @@
 # py-comix
+
 Python crawler that downloads images & creates comic book reader compatible files (.cbz)
 
 ## Standard execution
@@ -28,39 +29,17 @@ optional arguments:
 
 ```json
 {
-  "ru": {
-    "urls": [],
-    "rss": "",
-    "watch": [],
-    "filter": [
-      "TPB"
-    ]
-  },
   "to": {
     "urls": [],
     "rss": "",
     "watch": [],
-    "filter": [
-      "Issue"
-    ]
+    "filter": ["Issue"]
   },
   "manga": {
-    "urls": [
-    ],
+    "urls": [],
     "rss": "",
     "watch": [],
-    "filter": [
-      "Chapter"
-    ]
-  },
-  "graphite": {
-    "urls": [
-    ],
-    "rss": "",
-    "watch": [],
-    "filter": [
-      "Chapter"
-    ]
+    "filter": ["Chapter"]
   },
   "referer": ""
 }

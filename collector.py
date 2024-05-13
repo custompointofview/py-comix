@@ -44,9 +44,9 @@ class Collector:
         self.packer = Packer()
         self.collection_path = self.TMP_COLLECTIONS_DIR
         self.sweeper = None
-        self._init_referer()
+        self._init_referrer()
 
-    def _init_referer(self):
+    def _init_referrer(self):
         self.session = req.session()
         if self.options is not None:
             if (
@@ -93,14 +93,10 @@ class Collector:
         """Collect all chapters and images from chapters
         :return: None
         """
-        rus = self.options["ru"]
-        self._collect(rus, Variant.RU)
         tos = self.options["to"]
         self._collect(tos, Variant.TO)
         mas = self.options["manga"]
         self._collect(mas, Variant.MA)
-        grs = self.options["graphite"]
-        self._collect(grs, Variant.GR)
 
     def _collect(self, options, variant):
         """INNER COLLECTOR
@@ -108,13 +104,15 @@ class Collector:
         """
         print("=" * 75)
 
-        if len(options["urls"]) == 0:
+        urls = options["urls"]
+        if len(urls) == 0:
             print("- No URLs in:", variant)
             print("=" * 75)
             return
-
+        print(f"# Found {len(urls)} URLs in {variant}...")
         print("# Opted for simple collection. CPU count:", os.cpu_count())
-        for url in options["urls"]:
+        for url in urls:
+            print("# Initializing sweeper...")
             self.sweeper = SweeperFactory(
                 main_url=url,
                 dry_run=self.dry_run,
@@ -122,9 +120,13 @@ class Collector:
                 reverse=self.reverse,
                 use_proxies=self.use_proxies,
             ).create_sweeper(variant)
+            print("# Starting up the sweeper...")
             self.sweeper.start()
+            print("# Sweeping...")
             self.sweeper.sweep()
+            print("# Stopping sweeper...")
             self.sweeper.stop()
+            print("# Saving collection...")
             self._save_collection()
 
         print("=" * 75)
@@ -197,7 +199,6 @@ class Collector:
         for x in range(0, 10):
             for i in range(0, 10):
                 time.sleep(random.uniform(0.5, 3))
-                # r = req.get(img_url, stream=True)
                 r = self.scraper.get(img_url, stream=True, timeout=(60, 60))
                 if r.status_code == 200:
                     with open(img_path, "wb") as f:

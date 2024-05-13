@@ -1,10 +1,7 @@
 import os
-import time
-
 from playwright.sync_api import sync_playwright
 
-import helpers
-
+import cloudscraper
 
 PAGE_TIMEOUT = 300 * 1000  # 5 min expressed in milliseconds
 
@@ -150,3 +147,11 @@ class SweeperInterface:
     def close(self):
         if self.scraper:
             self.scraper.close()
+
+    def clean_scraper(self):
+        print("### Something went wrong. Cleaning scraper...")
+        if self.scraper:
+            self.scraper.close()
+        self.scraper = cloudscraper.create_scraper()
+        if self.proxy_helper:
+            self.proxy_helper.reset_current_working_proxy()
