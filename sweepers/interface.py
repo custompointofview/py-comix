@@ -1,5 +1,6 @@
 import os
 from playwright.sync_api import sync_playwright
+from playwright_stealth import stealth_sync
 
 import cloudscraper
 
@@ -36,12 +37,12 @@ class SweeperInterface:
         self.browser = None
         self.page = None
 
-    def start(self):
+    def init(self):
         if self.playwright_context is None:
             self.playwright_context = sync_playwright()
             self.playwright_context.start()
             self.playwright = self.playwright_context._playwright
-            self.browser = self.playwright.chromium.launch(headless=False)
+            self.browser = self.playwright.webkit.launch(headless=False)
 
     def stop(self):
         if self.playwright_context is not None:
@@ -81,40 +82,42 @@ class SweeperInterface:
     def get_page(self, url, locator=None):
         try:
             if self.browser is None or not self.browser.is_connected():
-                self.browser = self.playwright.chromium.launch(headless=False)
+                self.browser = self.playwright.webkit.launch(headless=False, chromium_sandbox=True)
             if self.page is None:
                 self.page = self.browser.new_page()
             print("- Navigating to URL:", url)
+            stealth_sync(self.page)
             self.page.goto(url=url, timeout=PAGE_TIMEOUT)
 
+
             if self.page.url != url:
-                print("- Detected url change...")
+                print("- Detected url change!")
                 print("- Waiting for page to load...")
                 self.page.wait_for_load_state(state="load", timeout=PAGE_TIMEOUT)
                 print("- Checking for captcha...")
                 self.page.wait_for_timeout(1500)
-                captcha = self.page.frame_locator('[title="reCAPTCHA"]').get_by_role(
-                    "checkbox", name="I'm not a robot"
-                )
-                print("- CAPTCHA:", captcha)
-                if captcha.is_visible():
-                    print("- Found captcha thingy. Trying to click...")
-                    captcha.click(
-                        button="left",
-                        delay=750,
-                        position={"x": 10, "y": 10},
-                    )
-                    self.page.wait_for_timeout(1500)
+                # captcha = self.page.frame_locator('[title="reCAPTCHA"]').get_by_role(
+                #     "checkbox", name="I'm not a robot"
+                # )
+                # print("- CAPTCHA:", captcha)
+                # if captcha.is_visible(timeout=2000):
+                #     print("- Found captcha thingy. Trying to click...")
+                #     captcha.click(
+                #         button="left",
+                #         delay=750,
+                #         position={"x": 10, "y": 10},
+                #     )
+                #     self.page.wait_for_timeout(1500)
 
-                    okButton = self.page.locator("#btnSubmit")
-                    print("- OK BUTTON:", okButton)
-                    if okButton.is_visible():
-                        okButton.click(
-                            button="left",
-                            delay=750,
-                            position={"x": 10, "y": 10},
-                        )
-                        self.page.wait_for_timeout(1500)
+                #     okButton = self.page.locator("#btnSubmit")
+                #     print("- OK BUTTON:", okButton)
+                #     if okButton.is_visible():
+                #         okButton.click(
+                #             button="left",
+                #             delay=750,
+                #             position={"x": 10, "y": 10},
+                #         )
+                #         self.page.wait_for_timeout(1500)
 
             print("- Waiting for URL...")
             self.page.wait_for_url(url=url, timeout=PAGE_TIMEOUT)

@@ -121,13 +121,13 @@ class Collector:
                 use_proxies=self.use_proxies,
             ).create_sweeper(variant)
             print("# Starting up the sweeper...")
-            self.sweeper.start()
+            self.sweeper.init()
             print("# Sweeping...")
-            self.sweeper.sweep()
+            self.sweeper.sweep(save_chapter=self._save_chapter)
             print("# Stopping sweeper...")
             self.sweeper.stop()
-            print("# Saving collection...")
-            self._save_collection()
+            # print("# Saving collection...")
+            # self._save_collection()
 
         print("=" * 75)
 
@@ -181,6 +181,8 @@ class Collector:
         """Saves chapter
         :return: None
         """
+        print("=" * 75)
+        print(f"## Saving chapter: {chapter_name} ...")
         # create dirs for imgs
         col_dir = os.path.join(self.TMP_COLLECTIONS_DIR, self.sweeper.name)
         chapter_dir = os.path.join(col_dir, chapter_name)
@@ -194,11 +196,11 @@ class Collector:
             self._save_img(img_url=img_url, img_path=img_path)
 
     def _save_img(self, img_url, img_path):
-        # sleep randomly so that we mask network behavior & retry
         ok = False
         for x in range(0, 10):
             for i in range(0, 10):
-                time.sleep(random.uniform(0.5, 3))
+                # sleep randomly so that we mask network behavior & retry
+                time.sleep(random.uniform(0.2, 1))
                 r = self.scraper.get(img_url, stream=True, timeout=(60, 60))
                 if r.status_code == 200:
                     with open(img_path, "wb") as f:

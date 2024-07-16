@@ -36,11 +36,13 @@ class SweeperMA(SweeperInterface):
         # LOOK ABOVE TO THE IMPORTS ^
         # self.scraper = cfscrape.create_scraper()
         self.scraper = cloudscraper.create_scraper()
+        self.save_chapter = None
 
-    def sweep(self):
+    def sweep(self, save_chapter = None):
         """Collect all chapters and images from chapters
         :return: None
         """
+        self.save_chapter = save_chapter
         self.announce_url()
         self.sweep_collection()
         self.sweep_chapters()
@@ -102,6 +104,8 @@ class SweeperMA(SweeperInterface):
         # visit urls and collect img urls
         for name, url in tqdm(self.chapters.items(), desc="## Collecting"):
             self.try_sweep_chapter(url, name)
+            if self.save_chapter:
+                self.save_chapter(name, self.get_chapter_imgs(name))
 
         # print chapter info
         for chapter, imgs in self.chapter_imgs.items():
@@ -132,11 +136,17 @@ class SweeperMA(SweeperInterface):
         print("### Waiting for all pages to load...")
         chapter_container = page.locator(".container-chapter-reader")
         chapter_container.wait_for(timeout=PAGE_TIMEOUT, state="visible")
+
         all_imgs = chapter_container.locator("img").all()
 
         print("### Determined number of pages: ", len(all_imgs))
         for i, img in enumerate(all_imgs):
+            img.wait_for(timeout=PAGE_TIMEOUT, state="visible")
+            time.sleep(0.1)
+            img.scroll_into_view_if_needed()
+            time.sleep(random.uniform(0.2, 1))
             if chapter_name not in self.chapter_imgs:
                 self.chapter_imgs[chapter_name] = []
             img_elem = (str(i + 1) + ".jpg", str(img.get_attribute("src")).strip())
+            print(f"### Page {i}:", img_elem)
             self.chapter_imgs[chapter_name].append(img_elem)
