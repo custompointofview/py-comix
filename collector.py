@@ -28,7 +28,7 @@ class Collector:
 
     TMP_COLLECTIONS_DIR = "collections"
 
-    def __init__(self, options, dry_run, clean, parallel, reverse, use_proxies=True):
+    def __init__(self, options, dry_run, clean, parallel, reverse, start_from, use_proxies=True,):
         """Initialize the Collector object
         :param url: <str> The URL from which to collect chapters and other info
         :param dry_run: <bool> Will only print and not download
@@ -44,6 +44,7 @@ class Collector:
         self.packer = Packer()
         self.collection_path = self.TMP_COLLECTIONS_DIR
         self.sweeper = None
+        self.start_from = start_from
         self._init_referrer()
 
     def _init_referrer(self):
@@ -118,6 +119,7 @@ class Collector:
                 dry_run=self.dry_run,
                 filters=options["filter"],
                 reverse=self.reverse,
+                start_from=self.start_from,
                 use_proxies=self.use_proxies,
             ).create_sweeper(variant)
             print("# Starting up the sweeper...")
@@ -134,7 +136,7 @@ class Collector:
     def pack(self):
         self.packer.pack_all(self.collection_path)
 
-    def _pack_all(self):
+    def pack_collections(self):
         self.packer.pack_collections(self.TMP_COLLECTIONS_DIR)
 
     def clean(self):
@@ -194,6 +196,8 @@ class Collector:
             if os.path.exists(img_path):
                 continue
             self._save_img(img_url=img_url, img_path=img_path)
+        # pack the chapter
+        self.pack_collections()
 
     def _save_img(self, img_url, img_path):
         ok = False

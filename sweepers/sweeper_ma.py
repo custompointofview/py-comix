@@ -20,7 +20,7 @@ class SweeperMA(SweeperInterface):
     All will be archived in a temp dir named: archives
     """
 
-    def __init__(self, main_url, dry_run, filters, reverse, use_proxies=True):
+    def __init__(self, main_url, dry_run, filters, reverse, start_from, use_proxies=True):
         """Initialize the Collector object
         :param main_url: <str> The URL from which to collect chapters and other info
         :param dry_run: <bool> Will only print and not download
@@ -37,6 +37,7 @@ class SweeperMA(SweeperInterface):
         # self.scraper = cfscrape.create_scraper()
         self.scraper = cloudscraper.create_scraper()
         self.save_chapter = None
+        self.start_from = start_from
 
     def sweep(self, save_chapter = None):
         """Collect all chapters and images from chapters
@@ -100,9 +101,16 @@ class SweeperMA(SweeperInterface):
 
     def sweep_chapters(self):
         time.sleep(5)
-        print("# Chapters info: ")
         # visit urls and collect img urls
-        for name, url in tqdm(self.chapters.items(), desc="## Collecting"):
+        chapters_list = list(self.chapters.items())
+        if (self.reverse):
+            print("# Reversing chapters...")
+            chapters_list.reverse()
+        if (self.start_from):
+            print("# Will start from chapter:", self.start_from)
+            chapters_list = chapters_list[self.start_from+1:]
+        print(f"# Sweeping {len(chapters_list)} chapters...")
+        for name, url in tqdm(chapters_list, desc="## Collecting"):
             self.try_sweep_chapter(url, name)
             if self.save_chapter:
                 self.save_chapter(name, self.get_chapter_imgs(name))
@@ -147,6 +155,8 @@ class SweeperMA(SweeperInterface):
             time.sleep(random.uniform(0.2, 1))
             if chapter_name not in self.chapter_imgs:
                 self.chapter_imgs[chapter_name] = []
-            img_elem = (str(i + 1) + ".jpg", str(img.get_attribute("src")).strip())
-            print(f"### Page {i}:", img_elem)
-            self.chapter_imgs[chapter_name].append(img_elem)
+            img_src = str(img.get_attribute("src")).strip()
+            if img_src is not None or img_src != 'None':
+                img_elem = (str(i + 1) + ".jpg", img_src)
+                print(f"### Page {i+1}:", img_elem)
+                self.chapter_imgs[chapter_name].append(img_elem)

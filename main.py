@@ -17,9 +17,10 @@ def archive(args, options):
         clean=args.clean,
         parallel=args.parallel,
         reverse=args.reverse,
+        start_from=args.start,
         use_proxies=args.use_proxies,
     )
-    c._pack_all()
+    c.pack_collections()
     c.clean()
     c.close()
 
@@ -31,6 +32,7 @@ def collect(args, options):
         clean=args.clean,
         parallel=args.parallel,
         reverse=args.reverse,
+        start_from=args.start,
         use_proxies=args.use_proxies,
     )
     try:
@@ -40,7 +42,7 @@ def collect(args, options):
         time.sleep(2)
         c.clean()
         c.close()
-    c._pack_all()
+    c.pack_collections()
     c.clean()
     # c.close()
 
@@ -109,9 +111,12 @@ if __name__ == "__main__":
         "-v", "--verbose", help="verbose execution", dest="verbose", action="store_true"
     )
     parser.add_argument(
-        "-x",
+        "-s", "--start", type=int, metavar="start", help="starts from chapter (included)"
+    )
+    parser.add_argument(
+        "-n",
         "--no-proxies",
-        help="disable proxies",
+        help="starts from this chapter",
         dest="use_proxies",
         action="store_false",
     )

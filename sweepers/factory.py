@@ -13,7 +13,7 @@ class SweeperFactory:
 
     RETRY = 50
 
-    def __init__(self, main_url, dry_run, filters, reverse=False, use_proxies=True):
+    def __init__(self, main_url, dry_run, filters, start_from, reverse=False, use_proxies=True):
         """Initialize the Collector object
         :param main_url: <str> The URL from which to collect chapters and other info
         :param dry_run: <bool> Will only print and not download
@@ -29,6 +29,7 @@ class SweeperFactory:
         self.use_proxies = use_proxies
         self.filters = filters
         self.scraper = None
+        self.start_from = start_from
 
     def create_sweeper(self, variant):
         if variant == Variant.TO:
@@ -45,5 +46,6 @@ class SweeperFactory:
                 dry_run=self.dry_run,
                 filters=self.filters,
                 reverse=self.reverse,
+                start_from=self.start_from,
                 use_proxies=self.use_proxies,
             )
