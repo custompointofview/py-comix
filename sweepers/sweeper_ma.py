@@ -11,6 +11,7 @@ import cloudscraper
 import helpers
 
 from sweepers.interface import SweeperInterface
+from sweepers.utils import add_padding_number
 
 PAGE_TIMEOUT = 300 * 1000  # 5 min expressed in milliseconds
 
@@ -90,10 +91,13 @@ class SweeperMA(SweeperInterface):
 
         print("# Finding chapters ...")
         chapters = page.locator(".row-content-chapter").locator("a").all()
+        chapter_index = len(chapters) + 1
         for chapter in chapters:
             chapter_url = chapter.get_attribute("href")
             chapter_name = str(chapter.inner_text()).strip()
             if chapter_name not in self.chapters:
+                chapter_index -= 1
+                chapter_name = f"{add_padding_number(chapter_index)} - {chapter_name}"
                 print("## Chapter: ", chapter_name, " - ", chapter_url)
                 self.chapters[chapter_name] = chapter_url
         self.filter_chapters()

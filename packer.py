@@ -54,7 +54,9 @@ class Packer:
                 print("## Skipping file:", imgs_path)
                 continue
             print("## Packing:", imgs_path)
-            archive_path = os.path.join(source_dir, dirname + ".cbz")
+
+            collection_name = os.path.basename(source_dir)
+            archive_path = os.path.join(source_dir, collection_name + " - " + dirname + ".cbz")
             self.pack(imgs_path, archive_path)
 
     def pack(self, imgs_path, archive_path):
@@ -65,8 +67,9 @@ class Packer:
         """
         try:
             zfile = zipfile.ZipFile(archive_path, "w")
-        except Exception:
+        except Exception as e:
             print("! Could not create archive: {}".format(archive_path))
+            print("Error: ", e)
             return
         for i, path in enumerate(self.files(imgs_path)):
             try:

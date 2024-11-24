@@ -19,7 +19,6 @@ from packer import Packer
 from variant import Variant
 from sweepers.factory import SweeperFactory
 
-
 class Collector:
     """
     Collector can collect chapters, scrape chapter URL and get images
@@ -160,7 +159,7 @@ class Collector:
         os.makedirs(self.collection_path, exist_ok=True)
         if not self.parallel:
             print("## Opted for simple downloads. CPU count:", os.cpu_count())
-            for ch_name, _ in tqdm(
+            for ch_name, i in tqdm(
                 self.sweeper.chapters.items(), desc="## Saving chapters"
             ):
                 self._save_chapter(ch_name, self.sweeper.get_chapter_imgs(ch_name))
