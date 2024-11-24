@@ -1,6 +1,7 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 from variant import Variant
+from sweepers.sweeper_mt import SweeperMT
 from sweepers.sweeper_ma import SweeperMA
 from sweepers.sweeper_to import SweeperTO
 
@@ -42,6 +43,15 @@ class SweeperFactory:
             )
         elif variant == Variant.MA:
             return SweeperMA(
+                main_url=self.main_url,
+                dry_run=self.dry_run,
+                filters=self.filters,
+                reverse=self.reverse,
+                start_from=self.start_from,
+                use_proxies=self.use_proxies,
+            )
+        elif variant == Variant.MT:
+            return SweeperMT(
                 main_url=self.main_url,
                 dry_run=self.dry_run,
                 filters=self.filters,

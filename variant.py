@@ -8,4 +8,4 @@ class Variant(Enum):
     RU = 1
     TO = 2
     MA = 3
-    GR = 4
+    MT = 4

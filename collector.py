@@ -95,8 +95,10 @@ class Collector:
         """
         tos = self.options["to"]
         self._collect(tos, Variant.TO)
-        mas = self.options["manga"]
+        mas = self.options["ma"]
         self._collect(mas, Variant.MA)
+        mts = self.options["mt"]
+        self._collect(mts, Variant.MT)
 
     def _collect(self, options, variant):
         """INNER COLLECTOR
