@@ -97,7 +97,7 @@ class SweeperMT(SweeperInterface):
             if chapter.get_attribute("href").startswith("/user"):
                 chapter_index -= 1
                 continue
-            chapter_url = "https://" + page_domain + chapter.get_attribute("href")
+            chapter_url = "https://" + page_domain + chapter.get_attribute("href") + "?load=2"
             chapter_name = str(chapter.inner_text()).strip()
 
             if chapter_name not in self.chapters:
